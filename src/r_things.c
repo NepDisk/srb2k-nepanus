@@ -2937,8 +2937,8 @@ INT32 numskins = 0;
 INT32 numallskins = 0;
 INT32 numlocalskins = 0;
 skin_t skins[MAXSKINS];
-UINT8 skinstats[9][9][MAXSKINS];
-UINT8 skinstatscount[9][9] = {
+UINT16 skinstats[9][9][MAXSKINS];
+UINT16 skinstatscount[9][9] = {
 	{0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -2949,7 +2949,7 @@ UINT8 skinstatscount[9][9] = {
 	{0, 1, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
-UINT8 skinsorted[MAXSKINS];
+UINT16 skinsorted[MAXSKINS];
 skin_t localskins[MAXSKINS];
 skin_t allskins[MAXSKINS*2];
 // FIXTHIS: don't work because it must be inistilised before the config load
@@ -3272,8 +3272,8 @@ static int skinSortFunc(const void *a, const void *b) //tbh i have no clue what 
 	const skin_t *in1 = &skins[*(const UINT8 *)a];
 	const skin_t *in2 = &skins[*(const UINT8 *)b];
 	INT32 temp = 0;
-	const UINT8 val_a = *((const UINT8 *)a);
-	const UINT8 val_b = *((const UINT8 *)b);
+	const UINT16 val_a = *((const UINT16 *)a);
+	const UINT16 val_b = *((const UINT16 *)b);
 
 
 	//return (strcmp(in1->realname, in2->realname) < 0) || (strcmp(in1->realname, in2->realname) ==);

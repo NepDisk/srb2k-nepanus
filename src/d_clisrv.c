@@ -589,7 +589,7 @@ static inline void resynch_write_player(resynch_pak *rsp, const size_t i)
 	rsp->pity = players[i].pity;
 
 	rsp->skincolor = players[i].skincolor;
-	rsp->skin = LONG(players[i].skin);
+	rsp->skin = (UINT16)players[i].skin;
 	// Just in case Lua does something like
 	// modify these at runtime
 	// SRB2kart
@@ -721,7 +721,7 @@ static void resynch_read_player(resynch_pak *rsp)
 	players[i].pity = rsp->pity;
 
 	players[i].skincolor = rsp->skincolor;
-	players[i].skin = LONG(rsp->skin);
+	players[i].skin = (UINT16)rsp->skin;
 	// Just in case Lua does something like
 	// modify these at runtime
 	players[i].kartspeed = (UINT8)rsp->kartspeed;
@@ -1653,7 +1653,7 @@ static void SV_SendPlayerInfo(INT32 node)
 
 		netbuffer->u.playerinfo[i].score = LONG(players[i].score);
 		netbuffer->u.playerinfo[i].timeinserver = SHORT((UINT16)(players[i].jointime / TICRATE));
-		netbuffer->u.playerinfo[i].skin = (UINT8)players[i].skin;
+		netbuffer->u.playerinfo[i].skin = (UINT16)players[i].skin;
 
 		// Extra data
 		// Kart has extra skincolors, so we can't use this
@@ -1699,7 +1699,7 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	// we fill these structs with FFs so that any players not in game get sent as 0xFFFF
 	// which is nice and easy for us to detect
-	memset(netbuffer->u.servercfg.playerskins, 0xFF, sizeof(netbuffer->u.servercfg.playerskins));
+	memset(netbuffer->u.servercfg.playerskins, 0xFFFF, sizeof(netbuffer->u.servercfg.playerskins));
 	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
@@ -1711,7 +1711,7 @@ static boolean SV_SendServerConfig(INT32 node)
 		if (!playeringame[i])
 			continue;
 
-		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
+		netbuffer->u.servercfg.playerskins[i] = (UINT16)players[i].skin;
 		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
 	}
 
@@ -4808,7 +4808,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			memset(playeringame, 0, sizeof(playeringame));
 			for (j = 0; j < MAXPLAYERS; j++)
 			{
-				if (netbuffer->u.servercfg.playerskins[j] == 0xFF
+				if (netbuffer->u.servercfg.playerskins[j] == 0xFFFF
 				 && netbuffer->u.servercfg.playercolor[j] == 0xFF)
 					continue; // not in game
 

@@ -221,7 +221,7 @@ typedef struct
 	SINT8 pity;
 
 	UINT8 skincolor;
-	INT32 skin;
+	UINT16 skin;
 	// Just in case Lua does something like
 	// modify these at runtime
 	// SRB2kart
@@ -326,7 +326,7 @@ typedef struct
 	UINT8 gamestate;
 
 	// 0xFF == not in game; else player skin num
-	UINT8 playerskins[MAXPLAYERS];
+	UINT16 playerskins[MAXPLAYERS];
 	UINT8 playercolor[MAXPLAYERS];
 
 	UINT8 gametype;
@@ -430,7 +430,7 @@ typedef struct
 	char name[MAXPLAYERNAME+1];
 	UINT8 address[4]; // sending another string would run us up against MAXPACKETLENGTH
 	UINT8 team;
-	UINT8 skin;
+	UINT16 skin;
 	UINT8 data; // Color is first four bits, hasflag, isit and issuper have one bit each, the last is unused.
 	UINT32 score;
 	UINT16 timeinserver; // In seconds.
@@ -440,7 +440,7 @@ typedef struct
 typedef struct
 {
 	char name[MAXPLAYERNAME+1];
-	UINT8 skin;
+	UINT16 skin;
 	UINT8 color;
 	UINT32 pflags;
 	UINT32 score;

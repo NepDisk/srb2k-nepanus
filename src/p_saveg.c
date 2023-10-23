@@ -68,7 +68,7 @@ static inline void P_ArchivePlayer(void)
 		pllives = 3; // has less than that.
 
 	WRITEUINT8(save_p, player->skincolor);
-	WRITEUINT8(save_p, player->skin);
+	WRITEUINT16(save_p, player->skin);
 
 	WRITEUINT32(save_p, player->score);
 	WRITEINT32(save_p, pllives);
@@ -87,7 +87,7 @@ static inline void P_ArchivePlayer(void)
 static inline void P_UnArchivePlayer(void)
 {
 	savedata.skincolor = READUINT8(save_p);
-	savedata.skin = READUINT8(save_p);
+	savedata.skin = READUINT16(save_p);
 
 	savedata.score = READINT32(save_p);
 	savedata.lives = READINT32(save_p);
@@ -1257,7 +1257,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_CVMEM)
 		WRITEINT32(save_p, mobj->cvmem);
 	if (diff2 & MD2_SKIN)
-		WRITEUINT8(save_p, (UINT8)((skin_t *)mobj->skin - skins));
+		WRITEUINT16(save_p, (UINT16)((skin_t *)mobj->skin - skins));
 	if (diff2 & MD2_COLOR)
 		WRITEUINT8(save_p, mobj->color);
 	if (diff2 & MD2_EXTVAL1)
@@ -2138,7 +2138,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_CVMEM)
 		mobj->cvmem = READINT32(save_p);
 	if (diff2 & MD2_SKIN)
-		mobj->skin = &skins[READUINT8(save_p)];
+		mobj->skin = &skins[READUINT16(save_p)];
 	if (diff2 & MD2_COLOR)
 		mobj->color = READUINT8(save_p);
 	if (diff2 & MD2_EXTVAL1)

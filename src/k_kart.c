@@ -80,7 +80,7 @@ consvar_t cv_darkitembox = {"darkitembox", "On", CV_SAVE, CV_OnOff, NULL, 0, NUL
 
 consvar_t cv_biglaps = {"biglaphud", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}; // here for ppl who dont want to make 2 more patches for their custom hud
 
-consvar_t  cv_highresportrait = {"highresportrait", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}; // here for ppl who dont want to make 2 more patches for their custom hud
+consvar_t  cv_highresportrait = {"highresportrait", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
 

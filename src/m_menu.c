@@ -1169,7 +1169,7 @@ static const char* OP_ControlsTooltips[] =
 	"Setup player 3 controls.",
 	"Setup player 4 controls.",
 	
-	"Allowed amount of comtrols per key.",
+	"Allowed amount of controls per key.",
 	"Turn smoothing for non-analog turning.",
 
 };
@@ -1516,10 +1516,10 @@ static const char* OP_SoundTooltips[] =
 	"Frequency of character voice lines.",
 	"Should the powerup warning be a sound effect or music?",
 	"Testing sounds...",
-	"Should the game play music while unfocused?",
-	"Should the game play sound while unfocused?",
+	"Should the games music play while unfocused?",
+	"Should the games sound play while unfocused?",
 	"Options for advanced sound settings.",
-	
+
 };
 
 
@@ -1743,8 +1743,8 @@ static const char* OP_GameTooltips[] =
 {
 	"Toggles for all in-game items.",
 	"Configure gameplay options related to Neptune client.",
-	"Speed of game in race mode.",
-	"Speed of game in battle mode.",
+	"Driving speed of game in race mode.",
+	"Driving speed of game in battle mode.",
 	"Crazier item rolls.",
 	"Mirror mode.",
 	"Number of laps.",
@@ -1792,7 +1792,7 @@ static const char* OP_ServerOptionsTooltips[] =
 	"Amount of map rows in voting.",
 	"How often should other gamemodes appear.",
 #ifndef NONET
-	"Max amount of players allowed in this server",
+	"Max amount of players allowed in this server.",
 	"Allow players to join this server.",
 	"Allow players to download addons.",
 	"Who has permission to pause the server?",

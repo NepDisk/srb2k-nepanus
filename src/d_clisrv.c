@@ -1426,6 +1426,8 @@ static boolean CL_SendJoin(void)
 	netbuffer->u.clientcfg.packetversion = PACKETVERSION;
 	netbuffer->u.clientcfg.version = VERSION;
 	netbuffer->u.clientcfg.subversion = SUBVERSION;
+	strncpy(netbuffer->u.clientcfg.clientname, VERSIONSTRING,
+			sizeof netbuffer->u.clientcfg.clientname);
 	strncpy(netbuffer->u.clientcfg.application, SRB2APPLICATION,
 			sizeof netbuffer->u.clientcfg.application);
 
@@ -1510,6 +1512,8 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.packetversion = PACKETVERSION;
 	netbuffer->u.serverinfo.version = VERSION;
 	netbuffer->u.serverinfo.subversion = SUBVERSION;
+	strncpy(netbuffer->u.serverinfo.clientname, VERSIONSTRING,
+			sizeof netbuffer->u.serverinfo.clientname);
 	strncpy(netbuffer->u.serverinfo.application, SRB2APPLICATION,
 			sizeof netbuffer->u.serverinfo.application);
 	// return back the time value so client can compute their ping
@@ -2023,6 +2027,7 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 
 		if (info->subversion != SUBVERSION)
 			return; // Close, but no cigar.
+		
 
 		if (strcmp(info->application, SRB2APPLICATION))
 			return;/* that's a different mod */

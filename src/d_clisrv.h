@@ -25,7 +25,7 @@ The 'packet version' is used to distinguish packet formats.
 This version is independent of VERSION and SUBVERSION. Different
 applications may follow different packet versions.
 */
-#define PACKETVERSION 0
+#define PACKETVERSION 1
 
 // Network play related stuff.
 // There is a data struct that stores network
@@ -363,6 +363,7 @@ typedef struct
 	char application[MAXAPPLICATION];
 	UINT8 version; // Different versions don't work
 	UINT8 subversion; // Contains build version
+	char clientname[MAXAPPLICATION]; // Name of client
 	UINT8 localplayers;	// number of splitscreen players
 	UINT8 mode;
 } ATTRPACK clientconfig_pak;
@@ -387,6 +388,7 @@ typedef struct
 	char  application[MAXAPPLICATION];
 	UINT8 version;
 	UINT8 subversion;
+	char  clientname[MAXAPPLICATION];
 	UINT8 numberofplayer;
 	UINT8 maxplayer;
 	UINT8 gametype;

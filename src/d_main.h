@@ -41,7 +41,6 @@ extern boolean stackingeffect; // Booststacking effect
 extern boolean nametaggfx; // Nametag stuffs
 extern boolean driftgaugegfx;
 
-
 extern boolean autoloading;
 extern boolean autoloaded;
 extern boolean postautoloaded;

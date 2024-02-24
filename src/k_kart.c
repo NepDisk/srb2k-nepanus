@@ -9057,7 +9057,6 @@ void K_LoadKartHUDGraphics(void)
 	// Nametags
 	// Remove Health if you plan to use for vanilla-compat client
 	if (nametaggfx){
-		
 		nametagpic = W_CachePatchName("NTLINE", PU_HUDGFX);
 		nametagline = W_CachePatchName("NTLINEV", PU_HUDGFX);
 		nametagspeed = W_CachePatchName("NTSP", PU_HUDGFX);
@@ -11043,8 +11042,8 @@ static void K_GetScreenCoords(vector2_t *vec, player_t *player, camera_t *came, 
 		x = FixedMul(x, FINECOSINE((yang>>ANGLETOFINESHIFT) & FINEMASK)); // perspective
 		y = -camaiming - FixedDiv(yang, distfact);
 
-		//if ((fixed_t)y < ANGLE_270 || (fixed_t)y > ANGLE_90) // clip points behind the camera
-		//	return;
+		if (y < (fixed_t)ANGLE_270 || y > (fixed_t)ANGLE_90) // clip points behind the camera
+			return;
 		if (splitscreen == 1) // multiply by 1.25 for 2P splitscreen
 			y = y + (y/4) ;
 		if (srcflip) // flipcam
@@ -11112,6 +11111,7 @@ static void K_drawNameTags(void)
 		UINT8 *cm;
 		fixed_t distance = 0;
 		fixed_t maxdistance = (10*cv_nametagdist.value)* mapobjectscale;
+
 		
 		if (i > PLAYERSMASK)
 			continue;
@@ -11170,7 +11170,7 @@ static void K_drawNameTags(void)
 		}
 
 		dup = vid.dupx;
-		
+
 		K_GetScreenCoords(&pos, stplyr, camera, players[i].mo->x, players[i].mo->y, players[i].mo->z + players[i].mo->height);
 		
 		//Check for negative screencoords
@@ -11180,39 +11180,38 @@ static void K_drawNameTags(void)
 		//Flipcam off
 		if (players[i].mo->eflags & MFE_VERTICALFLIP && !(players[i].pflags & PF_FLIPCAM))
 			pos.y += players[i].mo->height; 
-		
+
 		//Flipcam on
 		if (players[i].mo->eflags & MFE_VERTICALFLIP && (players[i].pflags & PF_FLIPCAM))
 			pos.y -= ((30*dup)<<FRACBITS); 
-		
+
 		//Flipcam off
 		if (players[i].mo->eflags & MFE_VERTICALFLIP && !(players[i].pflags & PF_FLIPCAM))
 			flipped = players[i].mo->eflags & MFE_VERTICALFLIP && !(players[i].pflags & PF_FLIPCAM);
-		
+
 		//Saltyhop hehe
 		if (cv_saltyhop.value && cv_nametaghop.value)
 			pos.y -= flipped ? -players[i].mo->spriteyoffset : players[i].mo->spriteyoffset;
-		
+
 		namex = pos.x>>FRACBITS;
 		namey = pos.y>>FRACBITS;
-		
+
 		tag = va("%s%s ", HU_SkinColorToConsoleColor(players[i].mo->color),player_names[i]);
 		icon = R_GetSkinFaceMini(players[i].mo->player);
-		
+
 		cm = R_GetTranslationColormap(players[i].skin, players[i].mo->color, GTC_CACHE);
 		tagcolor = colortranslations[players[i].mo->color][7];
 		vflags = trans | V_NOSCALESTART;
 		tagwidth = cv_smallnametags.value ? dup*V_SmallStringWidth(player_names[i], V_ALLOWLOWERCASE) : dup*V_ThinStringWidth(player_names[i], V_ALLOWLOWERCASE);
 		tagwidthsmall = cv_smallnametags.value ? V_SmallStringWidth(player_names[i], V_ALLOWLOWERCASE) : V_ThinStringWidth(player_names[i], V_ALLOWLOWERCASE);
-		
+
 		if (cv_smallnametags.value == 2 || cv_smallnametags.value == 1 || !nametaggfx)
 		{
-			
 			if (flipped)
 				namey += dup*5;
 			else // small offset
 				namey -= dup*3;
-			
+
 			if (nametaggfx && cv_smallnametags.value == 1)
 			{
 				if (cv_nametagfacerank.value)
@@ -11227,7 +11226,7 @@ static void K_drawNameTags(void)
 				namex += dup*2;
 				namey -= dup*4;
 			}
-			
+
 			if (cv_nametagfacerank.value)
 			{
 					V_DrawFixedPatch(namex<<FRACBITS, (namey - icon->height/2)<<FRACBITS, FRACUNIT/2, vflags, icon,  cm);
@@ -11256,13 +11255,13 @@ static void K_drawNameTags(void)
 				else
 					V_DrawSmallString(namex, namey - dup*5, V_ALLOWLOWERCASE | vflags, va("\x8A%d ", players[i].score));
 			}
-			
+
 		}
 		else
 		{
 			if (cv_nametagfacerank.value)
 				tagwidth += dup*(icon->width+1);
-			
+
 			if (flipped)
 			{
 				for	(j = 0; j < 4; j++)
@@ -12563,7 +12562,6 @@ void K_drawKartHUD(void)
 	if (LUA_HudEnabled(hud_item) && !freecam)
 #endif
 		K_drawKartItem();
-		
 	
 	if (cv_driftgauge.value)
 		K_drawDriftGauge();

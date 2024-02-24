@@ -2386,7 +2386,6 @@ static menuitem_t OP_NametagMenu[] =
 	//{IT_STRING | IT_CVAR, NULL, "Nametag Scaling", &cv_nametagscaling, 70}
 };
 
-
 static const char* OP_NametagTooltips[] =
 {
 	NULL,
@@ -2419,7 +2418,6 @@ enum
 	nt_smol,
 };
 
-
 static menuitem_t OP_DriftGaugeMenu[] =
 {
 	{IT_HEADER, NULL, "Driftgauge", NULL, 0},
@@ -2446,7 +2444,6 @@ enum
 	dg_dgoffset,
 	dg_dgstyle,
 };
-
 
 static menuitem_t OP_TiltMenu[] =
 {

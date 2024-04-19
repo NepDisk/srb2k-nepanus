@@ -6944,7 +6944,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			}
 			else
 			{
-				P_PartialAddWadFile(filename, false);
+				P_PartialAddWadFileEx(filename, false);
 			}
 		}
 	}

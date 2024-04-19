@@ -5118,7 +5118,7 @@ static void Command_Addfile(void)
 	// Add file on your client directly if it is trivial, or you aren't in a netgame.
 	if (!(netgame || multiplayer) || musiconly)
 	{
-		P_AddWadFile(fn, false);
+		P_AddWadFileEx(fn, false);
 		return;
 	}
 
@@ -5182,17 +5182,17 @@ Command_Addskins (void)
 	/*
 	if (fasticmp(COM_Argv(2), "-force") || fasticmp(COM_Argv(2), "-f")) {
 		CONS_Alert(CONS_NOTICE, M_GetText("Adding file %s. May or may not be a skin.\n"), COM_Argv(1));
-		P_AddWadFile(COM_Argv(1), 0, true);	
+		P_AddWadFileEx(COM_Argv(1), 0, true);	
 	} else {
 		if (DumbStartsWith("KC_", COM_Argv(1))) {
-			P_AddWadFile(COM_Argv(1), 0, true);
+			P_AddWadFileEx(COM_Argv(1), 0, true);
 		} else if (DumbStartsWith("KCL_", COM_Argv(1))) {
 			if (!demo.playback) {
 				CONS_Alert(CONS_ERROR, M_GetText("Cannot add file %s as it is a skin with lua. Include -force or -f to force it to load.\n"), COM_Argv(1));
 				return;
 			} else {
 	*/
-				P_AddWadFile(COM_Argv(1), true);
+				P_AddWadFileEx(COM_Argv(1), true);
 	/*
 			}
 		} else {
@@ -5399,7 +5399,7 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 
 	ncs = findfile(filename,md5sum,true);
 
-	if (ncs != FS_FOUND || !P_AddWadFile(filename, false))
+	if (ncs != FS_FOUND || !P_AddWadFileEx(filename, false))
 	{
 		Command_ExitGame_f();
 		if (ncs == FS_FOUND)

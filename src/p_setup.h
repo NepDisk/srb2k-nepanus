@@ -63,17 +63,21 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate);
 #ifdef HWRENDER
 void HWR_LoadLevel(void);
 #endif
-boolean P_AddWadFile(const char *wadfilename, boolean local);
+boolean P_AddWadFile(const char *wadfilename);
+boolean P_AddWadFileEx(const char *wadfilename, boolean local);
 boolean P_AddWadFileLocal(const char *wadfilename);
 
 #define MAPRET_ADDED (1)
 #define MAPRET_CURRENTREPLACED (1<<1)
 UINT8 P_InitMapData(void);
+extern lumpnum_t wadnamelump;
+extern INT16 wadnamemap;
+#define WADNAMECHECK(name) (!strncmp(name, "WADNAME", 7))
 
 // WARNING: The following functions should be grouped as follows:
 // any amount of PartialAdds followed by MultiSetups until returned true,
 // as soon as possible.
-UINT16 P_PartialAddWadFile(const char *wadfilename, boolean local);
+UINT16 P_PartialAddWadFile(const char *wadfilename);
 // Run a single stage of multisetup, or all of them if fullsetup set.
 //   fullsetup true: run everything
 //   otherwise
@@ -88,8 +92,12 @@ boolean P_MultiSetupWadFiles(boolean fullsetup);
 //   if 0, partial adds done but MultiSetup not called yet
 //   if positive, setup's partway done
 SINT8 P_PartialAddGetStage(void);
+UINT16 P_PartialAddWadFileEx(const char *wadfilename, boolean local);
+extern UINT16 partadd_earliestfile;
 
 boolean P_RunSOC(const char *socfilename);
+void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
+void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_WriteThings(lumpnum_t lump);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);

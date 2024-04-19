@@ -1472,7 +1472,7 @@ void I_GetEvent(void)
 				break;
 			case SDL_DROPFILE:
 				dropped_filedir = evt.drop.file;
-				P_AddWadFile(dropped_filedir, false);
+				P_AddWadFileEx(dropped_filedir, false);
 				SDL_free(dropped_filedir);    // Free dropped_filedir memory
 				break;
 			case SDL_QUIT:

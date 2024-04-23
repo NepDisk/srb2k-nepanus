@@ -40,7 +40,6 @@ typedef struct
 {
 	// Keep name for switch changing, etc.
 	char name[8];
-	UINT32 hash;
 	INT16 width, height;
 	boolean holes;
 
@@ -65,7 +64,6 @@ extern CV_PossibleValue_t Followercolor_cons_t[];
 
 // Load TEXTURE1/TEXTURE2/PNAMES definitions, create lookup tables
 void R_LoadTextures(void);
-void R_LoadTexturesPwad(UINT16 wadnum);
 void R_FlushTextureCache(void);
 
 INT32 R_GetTextureNum(INT32 texnum);

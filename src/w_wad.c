@@ -470,10 +470,13 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 			lump_p->compression = CM_NOCOMPRESSION;
 		memset(lump_p->name, 0x00, 9);
 		strncpy(lump_p->name, fileinfo->name, 8);
+		lump_p->hash = quickncasehash(lump_p->name, 8);
+
 		if (WADNAMECHECK(fileinfo->name))
 		{
 			size_t namelen;
 			const char *trimname, *dotpos;
+
 
 			trimname = strrchr(filename, PATHSEP[0]);
 #if defined (_WIN32)
@@ -1095,15 +1098,10 @@ UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 UINT16 W_CheckNumForLongNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 {
 	UINT16 i;
-	static char uname[256 + 1];
-	UINT32 hash;
+	UINT32 hash = quickncasehash(name, 8); // Not a mistake, legacy system for short lumpnames
 
 	if (!TestValidLump(wad,0))
 		return INT16_MAX;
-
-	strlcpy(uname, name, sizeof uname);
-	strupr(uname);
-	hash = quickncasehash(uname, 8); // Not a mistake, legacy system for short lumpnames
 
 	//
 	// scan forward
@@ -1117,7 +1115,7 @@ UINT16 W_CheckNumForLongNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 		{
 			if (lump_p->hash != hash)
 				continue;
-			if (strcmp(lump_p->longname, uname))
+			if (strcasecmp(lump_p->longname, name))
 				continue;
 			return i;
 		}

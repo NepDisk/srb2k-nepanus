@@ -857,13 +857,8 @@ void D_StartTitle(void)
 
 			if (server)
 			{
-				char mapname[6];
+				COM_BufAddText(va("map %s\n", G_BuildMapName(spstage_start)));
 
-				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof (mapname));
-				strlwr(mapname);
-				mapname[5] = '\0';
-
-				COM_BufAddText(va("map %s\n", mapname));
 			}
 		}
 
@@ -1578,7 +1573,7 @@ void D_SRB2Main(void)
 				INT16 num;
 				if (name[5] != '\0')
 					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
+				num = (INT16)G_MapNumber(name);
 
 				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 				if (num <= NUMMAPS && mapheaderinfo[num - 1])
@@ -1604,7 +1599,7 @@ void D_SRB2Main(void)
 				INT16 num;
 				if (name[5] != '\0')
 					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
+				num = (INT16)G_MapNumber(name);
 
 				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
 				if (num <= NUMMAPS && mapheaderinfo[num - 1])

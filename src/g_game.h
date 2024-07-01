@@ -200,9 +200,9 @@ typedef enum
 #define MAXPLMOVE (50)
 #define SLOWTURNTICS (cv_turnsmooth.value * 3)
 
-// build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
+INT32 G_MapNumber(const char *mapname);
 
 // copy ticcmd_t to and fro the normal way
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
@@ -226,7 +226,7 @@ extern boolean camspin[MAXSPLITSCREENPLAYERS]; // SRB2Kart
 void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
 void G_PlayerReborn(INT32 player);
-void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer,
+void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer,
 	boolean skipprecutscene);
 char *G_BuildMapTitle(INT32 mapnum);
 
@@ -262,7 +262,7 @@ void G_SpawnPlayer(INT32 playernum, boolean starpost);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
-void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar,
+void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar,
 	UINT8 ssplayers, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
 

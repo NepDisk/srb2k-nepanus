@@ -24,7 +24,6 @@
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
 #include "d_netcmd.h" // IsPlayerAdmin
-#include "m_misc.h" // M_MapNumber
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -164,7 +163,7 @@ static int lib_mMapNumber(lua_State *L)
 	if (len == 2 || len == 5) {
 		char first = arg[len-2];
 		char second = arg[len-1];
-		lua_pushinteger(L, M_MapNumber(first, second));
+		lua_pushinteger(L, G_MapNumber(arg));
 	} else {
 		lua_pushinteger(L, 0);
 	}
@@ -3198,8 +3197,9 @@ static luaL_Reg lib[] = {
 	{"EvalMath", lib_evalMath},
 	{"IsPlayerAdmin", lib_isPlayerAdmin},
 
-	// m_misc
+	// g_game
 	{"M_MapNumber",lib_mMapNumber},
+	{"G_MapNumber",lib_mMapNumber},
 
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},

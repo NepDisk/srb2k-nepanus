@@ -3083,7 +3083,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
 
-		WRITESTRINGN(buf_p, mapname, MAX_WADPATH);
+		WRITEINT16(buf_p, mapnum);
 	}
 
 	if (delay == 1)
@@ -3500,12 +3500,11 @@ static void Command_Map_f(void)
   */
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 {
-	char mapname[MAX_WADPATH+1];
 	UINT8 flags;
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
-	//INT16 mapnumber;
+	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -3547,7 +3546,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	FLS = ((flags & (1<<3)) != 0);
 
-	READSTRINGN(*cp, mapname, MAX_WADPATH);
+	mapnumber = READINT16(*cp);
 
 	if (netgame)
 		P_SetRandSeed(READUINT32(*cp));
@@ -3555,7 +3554,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (!skipprecutscene)
 	{
 		DEBFILE(va("Warping to %s [resetplayer=%d lastgametype=%d gametype=%d cpnd=%d]\n",
-			mapname, resetplayer, lastgametype, gametype, chmappending));
+			G_BuildMapName(mapnumber), resetplayer, lastgametype, gametype, chmappending));
 		CON_LogMessage(M_GetText("Speeding off to level...\n"));
 	}
 
@@ -3571,12 +3570,11 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (modeattacking) // i remember moving this here in internal fixed a heisenbug so
 		SetPlayerSkinByNum(0, cv_chooseskin.value-1);
 
-	//mapnumber = M_MapNumber(mapname[3], mapname[4]);
 	//LUAh_MapChange(mapnumber);
 
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
-	G_InitNew(pencoremode, mapname, resetplayer, skipprecutscene);
+	G_InitNew(pencoremode, mapnumber, resetplayer, skipprecutscene);
 	if (demo.playback && !demo.timing)
 		precache = true;
 	if (demo.timing)

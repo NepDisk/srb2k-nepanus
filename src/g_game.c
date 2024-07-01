@@ -163,6 +163,7 @@ struct quake quake;
 
 // Map Header Information
 mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
+INT32 nummapheaders;
 
 static boolean exitgame = false;
 static boolean retrying = false;
@@ -650,19 +651,14 @@ void G_SetWadModified(boolean silent, boolean major, UINT16 wadnum)
 	G_SetGameModified(silent, major);
 }
 
-/** Builds an original game map name from a map number.
-  * The complexity is due to MAPA0-MAPZZ.
+/** Returns the map lump name for a map number.
   *
   * \param map Map number.
-  * \return Pointer to a static buffer containing the desired map name.
-  * \sa M_MapNumber
+  * \return Map name.
+  * \sa G_MapNumber
   */
 const char *G_BuildMapName(INT32 map)
 {
-	static char mapname[10] = "MAPXX"; // internal map name (wad resource name)
-
-	I_Assert(map >= 0);
-	I_Assert(map <= NUMMAPS);
 
 	if (map == 0) // hack???
 	{
@@ -676,19 +672,35 @@ const char *G_BuildMapName(INT32 map)
 	}
 
 
-	if (map < 100 && map >= 0) // ...but why use signed integer in first place? idk but this prevents warning (and potential buffer overflow lol)
-		sprintf(&mapname[3], "%.2d", map);
+	if (map > 0 && map <= NUMMAPS && mapheaderinfo[map - 1] != NULL)
+	{
+		return mapheaderinfo[map - 1]->lumpname;
+	}
 	else
 	{
-		mapname[3] = (char)('A' + (char)((map - 100) / 36));
-		if ((map - 100) % 36 < 10)
-			mapname[4] = (char)('0' + (char)((map - 100) % 36));
-		else
-			mapname[4] = (char)('A' + (char)((map - 100) % 36) - 10);
-		mapname[5] = '\0';
+		return NULL;
 	}
+}
 
-	return mapname;
+/** Returns the map number for map lump name.
+  *
+  * \param name Map name;
+  * \return Map number.
+  * \sa G_BuildMapName
+  */
+INT32 G_MapNumber(const char * name)
+{
+	INT32 map;
+
+	for (map = 0; map < nummapheaders; ++map)
+	{
+		if (strcasecmp(mapheaderinfo[map]->lumpname, name) == 0)
+		{
+			break;
+		}
+	}
+	
+	return map + 1;
 }
 
 /** Clips the console player's mouse aiming to the current view.
@@ -4489,7 +4501,7 @@ void G_SaveGame(UINT32 savegameslot)
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayers[], playeringame[] should be set.
 //
-void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
+void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
 	INT32 i;
 	UINT8 color = 0;
@@ -4533,16 +4545,17 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 	if (color)
 		CV_StealthSetValue(&cv_playercolor, color);
 
-	if (mapname)
-		D_MapChange(M_MapNumber(mapname[3], mapname[4]), gametype, pencoremode, true, 1, false, FLS);
+	D_MapChange(map, gametype, pencoremode, true, 1, false, FLS);
 }
 
 //
 // This is the map command interpretation something like Command_Map_f
 //
 // called at: map cmd execution, doloadgame, doplaydemo
-void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, boolean skipprecutscene)
+void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skipprecutscene)
 {
+	const char * mapname = G_BuildMapName(map);
+
 	INT32 i;
 
 	if (paused)
@@ -4606,7 +4619,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		return;
 	}
 
-	gamemap = (INT16)M_MapNumber(mapname[3], mapname[4]); // get xx out of MAPxx
+	gamemap = map;
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
@@ -4634,7 +4647,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	{
 		char *title = G_BuildMapTitle(gamemap);
 
-		CON_LogMessage(va(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap)));
+		CON_LogMessage(va(M_GetText("Map is now \"%s"), mapname));
 		if (title)
 		{
 			CON_LogMessage(va(": %s", title));
@@ -4894,12 +4907,12 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 	}
 	else if (mapnamelen == 2)/* maybe two digit code */
 	{
-		if (( newmapnum = M_MapNumber(mapname[0], mapname[1]) ))
+		if (( newmapnum = G_MapNumber(mapname) ))
 			usemapcode = true;
 	}
 	else if (mapnamelen == 5 && strnicmp(mapname, "MAP", 3) == 0)
 	{
-		if (( newmapnum = M_MapNumber(mapname[3], mapname[4]) ))
+		if (( newmapnum = G_MapNumber(mapname) ))
 			usemapcode = true;
 	}
 
@@ -7880,7 +7893,7 @@ post_compat:
 #endif
 
 	P_SetRandSeed(randseed);
-	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
+	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

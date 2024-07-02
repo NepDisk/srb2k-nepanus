@@ -135,7 +135,7 @@ opendir (const CHAR *szPath)
   /* Allocate enough space to store DIR structure and the complete
    * directory path given. */
   nd = (DIR *) malloc (sizeof (DIR) + (strlen(szFullPath) + strlen (SLASH) +
-			 strlen(SUFFIX) + 1) * sizeof (CHAR));
+			 strlen(PATHSEP) + 1) * sizeof (CHAR));
 
   if (!nd)
     {

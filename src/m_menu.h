@@ -251,7 +251,7 @@ typedef struct
 	UINT8 netgame;
 } saveinfo_t;
 
-extern INT32 mapwads[NUMMAPS];
+extern INT32 mapwads[MAXMAPS];
 
 extern description_t description[MAXSKINS];
 

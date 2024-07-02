@@ -600,7 +600,7 @@ UINT8 M_GotEnoughEmblems(INT32 number)
 	INT32 mscore = 0;
 	INT32 i;
 
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
 			continue;
@@ -618,7 +618,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	INT32 curtics = 0;
 	INT32 i;
 
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
 			continue;
@@ -636,7 +636,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	INT32 mrings = 0;
 	INT32 i;
 
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
 			continue;

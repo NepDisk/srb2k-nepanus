@@ -210,6 +210,4 @@ typedef struct
 //extern const char *Color_Names[MAXSKINCOLORS];
 //extern const UINT8 Color_Opposite[MAXSKINCOLORS*2];
 
-#define NUMMAPS 1035
-
 #endif // __DOOMDATA__

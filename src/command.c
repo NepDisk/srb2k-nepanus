@@ -1745,13 +1745,13 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					if(increment > 0) // Going up!
 					{
-						if (++newvalue == NUMMAPS)
+						if (++newvalue == MAXMAPS)
 							newvalue = -1;
 					}
 					else // Going down!
 					{
 						if (--newvalue == -2)
-							newvalue = NUMMAPS-1;
+							newvalue = MAXMAPS-1;
 					}
 
 					if (newvalue == oldvalue)

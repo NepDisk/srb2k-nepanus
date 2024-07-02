@@ -1426,7 +1426,7 @@ static int lib_getMapheaderinfo(lua_State *L)
 	if (lua_isnumber(L, 1))
 	{
 		size_t i = lua_tointeger(L, 1)-1;
-		if (i >= NUMMAPS)
+		if (i >= MAXMAPS)
 			return 0;
 		LUA_PushUserdata(L, mapheaderinfo[i], META_MAPHEADER);
 		//CONS_Printf(mapheaderinfo[i]->lvlttl);
@@ -1444,7 +1444,7 @@ static int lib_getMapheaderinfo(lua_State *L)
 
 static int lib_nummapheaders(lua_State *L)
 {
-	lua_pushinteger(L, NUMMAPS);
+	lua_pushinteger(L, nummapheaders);
 	return 1;
 }
 

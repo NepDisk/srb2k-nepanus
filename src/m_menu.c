@@ -144,7 +144,7 @@ const char *quitmsg[NUM_QUITMESSAGES];
 // Stuff for customizing the player select screen Tails 09-22-2003
 description_t description[MAXSKINS];
 
-INT32 mapwads[NUMMAPS];
+INT32 mapwads[MAXMAPS];
 
 //static char *char_notes = NULL;
 //static fixed_t char_scroll = 0;
@@ -470,7 +470,7 @@ consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{0,"MIN"},
-	{NUMMAPS, "MAX"},
+	{MAXMAPS, "MAX"},
 	{0, NULL}
 };
 consvar_t cv_nextmap = {"nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -5940,7 +5940,7 @@ static INT32 M_CountLevelsToShowInList(void)
 {
 	INT32 mapnum, count = 0;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, -1))
 			count++;
 
@@ -5951,7 +5951,7 @@ static INT32 M_GetFirstLevelInList(void)
 {
 	INT32 mapnum;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, -1))
 			return mapnum + 1;
 
@@ -8756,7 +8756,7 @@ static void M_Credits(INT32 choice)
 
 static INT32 statsLocation;
 static INT32 statsMax;
-static INT16 statsMapList[NUMMAPS+1];
+static INT16 statsMapList[MAXMAPS+1];
 
 static void M_Statistics(INT32 choice)
 {
@@ -8766,7 +8766,7 @@ static void M_Statistics(INT32 choice)
 
 	memset(statsMapList, 0, sizeof(statsMapList));
 
-	for (i = 0; i < NUMMAPS; i++)
+	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i] || mapheaderinfo[i]->lvlttl[0] == '\0')
 			continue;
@@ -8904,7 +8904,7 @@ static void M_DrawLevelStats(void)
 	V_DrawString(20, 42, highlightflags, "Total Matches:");
 	V_DrawRightAlignedString(BASEVIDWIDTH-16, 42, 0, va("%i played", matchesplayed));
 
-	for (i = 0; i < NUMMAPS; i++)
+	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
 			continue;
@@ -10077,7 +10077,7 @@ static INT32 M_FindFirstMap(INT32 gtype)
 	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gtype))
 		return gamemap;
 
-	for (i = 0; i < NUMMAPS; i++)
+	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
@@ -10217,7 +10217,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		{
 			i--;
 			if (i == -2)
-				i = NUMMAPS-1;
+				i = nummapheaders-1;
 
 			if (i == oldval)
 				return;
@@ -10254,7 +10254,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		do
 		{
 			i++;
-			if (i == NUMMAPS)
+			if (i == nummapheaders)
 				i = -1;
 
 			if (i == oldval)

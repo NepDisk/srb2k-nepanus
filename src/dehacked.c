@@ -251,7 +251,7 @@ static void clear_levels(void)
 
 	// This is potentially dangerous but if we're resetting these headers,
 	// we may as well try to save some memory, right?
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i])
 			continue;
@@ -1025,7 +1025,7 @@ static void readlevelheader(MYFILE *f, char * name, INT32 wadnum)
 	INT32 i;
 	const INT32 num = G_MapNumber(name);
 	
-	if (num > NUMMAPS)
+	if (num > MAXMAPS)
 	{
 		I_Error("Too many maps!");
 	}
@@ -2553,9 +2553,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = G_MapNumber(params[1]);
 
 
-		if (re < 0 || re >= NUMMAPS)
+		if (re < 0 || re >= nummapheaders)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", re, nummapheaders);
 			return;
 		}
 	}
@@ -2569,9 +2569,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		x1 = (INT16)G_MapNumber(params[1]);
 
-		if (x1 < 0 || x1 >= NUMMAPS)
+		if (x1 < 0 || x1 >= nummapheaders)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Level number %d out of range (1 - %d)", re, nummapheaders);
 			return;
 		}
 	}

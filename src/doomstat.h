@@ -292,8 +292,9 @@ typedef struct
 #define SAVE_DEFAULT  0
 #define SAVE_ALWAYS   1
 
-extern mapheader_t* mapheaderinfo[NUMMAPS];
+extern mapheader_t* mapheaderinfo[MAXMAPS];
 extern INT32 nummapheaders,basenummapheaders;
+extern INT32 nummapheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
 
@@ -391,8 +392,8 @@ typedef struct
 	tic_t	time[9];
 } nightsdata_t;*/
 
-//extern nightsdata_t *nightsrecords[NUMMAPS];
-extern recorddata_t *mainrecords[NUMMAPS];
+//extern nightsdata_t *nightsrecords[MAXMAPS];
+extern recorddata_t *mainrecords[MAXMAPS];
 
 // mapvisited is now a set of flags that says what we've done in the map.
 #define MV_VISITED     1
@@ -401,7 +402,7 @@ extern recorddata_t *mainrecords[NUMMAPS];
 //#define MV_ULTIMATE     8
 //#define MV_PERFECT     16
 #define MV_MAX         7 // used in gamedata check
-extern UINT8 mapvisited[NUMMAPS];
+extern UINT8 mapvisited[MAXMAPS];
 
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;

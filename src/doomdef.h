@@ -216,6 +216,9 @@ extern char  logfilename[1024];
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
+// Not quite player shit but other stuff is here so why not
+#define MAXMAPS INT16_MAX
+
 // Master Server compatibility ONLY
 #define MSCOMPAT_MAXPLAYERS (32)
 

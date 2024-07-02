@@ -2554,9 +2554,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = G_MapNumber(params[1]);
 
 
-		if (re < 0 || re >= nummapheaders)
+		if (re < 0 || re >= MAXMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, nummapheaders);
+			deh_warning("Level number %d out of range (1 - %d)", re, MAXMAPS);
 			return;
 		}
 	}
@@ -2570,9 +2570,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		x1 = (INT16)G_MapNumber(params[1]);
 
-		if (x1 < 0 || x1 >= nummapheaders)
+		if (x1 < 0 || x1 >= MAXMAPS)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, nummapheaders);
+			deh_warning("Level number %d out of range (1 - %d)", re, MAXMAPS);
 			return;
 		}
 	}

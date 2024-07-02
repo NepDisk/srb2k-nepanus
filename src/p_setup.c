@@ -3344,6 +3344,18 @@ UINT8 P_InitMapData(void)
 		// No change?
 		if (mapheaderinfo[i]->lumpnum == maplump)
 			continue;
+		
+		// Doesn't exist in this set of files?
+		if (maplump == LUMPERROR)
+		{
+#ifndef DEVELOP
+			if (!basenummapheaders)
+			{
+				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
+			}
+#endif
+			continue;
+		}
 
 		// Okay, it does...
 		{
@@ -3563,7 +3575,7 @@ UINT16 P_PartialAddWadFileEx(const char *wadfilename, boolean local)
 	//
 	// extra sprite/skin data
 	//
-	R_LoadSpriteInfoLumps(wadnum, numlumps);
+	R_LoadSpriteInfoLumps(wadnum, wadfiles[wadnum]->numlumps);
 
 	// For anything that has to be done over every wadfile at once, see P_MultiSetupWadFiles.
 

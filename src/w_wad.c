@@ -1059,16 +1059,10 @@ UINT16 W_CheckNumForMapPwad(const char *name, UINT32 hash, UINT16 wad, UINT16 st
 UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 {
 	UINT16 i;
-	static char uname[9];
-	UINT32 hash;
+	UINT32 hash = quickncasehash(name, 8);
 
 	if (!TestValidLump(wad,0))
 		return INT16_MAX;
-
-	memset(uname, 0, sizeof uname);
-	strncpy(uname, name, sizeof(uname)-1);
-	strupr(uname);
-	hash = quickncasehash(uname, 8);
 
 	//
 	// scan forward
@@ -1082,11 +1076,10 @@ UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 		{
 			if (lump_p->hash != hash)
 				continue;
-			if (strncmp(lump_p->name, uname, sizeof(uname) - 1))
+			if (strncasecmp(lump_p->name, name, 8))
 				continue;
 			return i;
 		}
-
 	}
 
 	// not found.
@@ -1204,8 +1197,12 @@ UINT16 W_CheckNumForFullNamePK3(const char *name, UINT16 wad, UINT16 startlump)
 //
 lumpnum_t W_CheckNumForName(const char *name)
 {
-	INT32 i;
 	lumpnum_t check = INT16_MAX;
+	UINT32 hash = name ? quickncasehash(name, 8) : 0;
+	INT32 i;
+
+	if (name == NULL)
+		return LUMPERROR;
 
 	if (!*name) // some doofus gave us an empty string?
 		return LUMPERROR;
@@ -1215,7 +1212,8 @@ lumpnum_t W_CheckNumForName(const char *name)
 	for (i = lumpnumcacheindex + LUMPNUMCACHESIZE; i > lumpnumcacheindex; i--)
 	{
 		if (!lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname[8]
-			&& strncmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name, 8) == 0)
+			&& lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumphash == hash
+			&& strncasecmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name, 8) == 0)
 		{
 			lumpnumcacheindex = i & (LUMPNUMCACHESIZE - 1);
 			return lumpnumcache[lumpnumcacheindex].lumpnum;
@@ -1230,14 +1228,18 @@ lumpnum_t W_CheckNumForName(const char *name)
 			break; //found it
 	}
 
-	if (check == INT16_MAX) return LUMPERROR;
+	if (check == INT16_MAX)
+	{
+		return LUMPERROR;
+	}
 	else
 	{
 		// Update the cache.
 		lumpnumcacheindex = (lumpnumcacheindex + 1) & (LUMPNUMCACHESIZE - 1);
-		memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', 32);
+		memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', LUMPNUMCACHENAME);
 		strncpy(lumpnumcache[lumpnumcacheindex].lumpname, name, 8);
-		lumpnumcache[lumpnumcacheindex].lumpnum = (i<<16)+check;
+		lumpnumcache[lumpnumcacheindex].lumpnum = (i << 16) + check;
+		lumpnumcache[lumpnumcacheindex].lumphash = hash;
 
 		return lumpnumcache[lumpnumcacheindex].lumpnum;
 	}

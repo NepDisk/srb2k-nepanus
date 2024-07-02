@@ -149,10 +149,9 @@ opendir (const CHAR *szPath)
 
   /* Add on a slash if the path does not end with one. */
   if (nd->dd_name[0] != '\0' &&
-      nd->dd_name[strlen (nd->dd_name) - 1] != '/' &&
-      nd->dd_name[strlen (nd->dd_name) - 1] != '\\')
+		nd->dd_name[strlen (nd->dd_name) - 1] != PATHSEP[0])
     {
-      strcat (nd->dd_name, SLASH);
+      strcat (nd->dd_name, PATHSEP);
     }
 
   /* Add on the search pattern */
@@ -382,9 +381,9 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 		return FS_NOTFOUND;
 	}
 
-	if (searchpath[searchpathindex[depthleft]-2] != '/')
+	if (searchpath[searchpathindex[depthleft]-2] != PATHSEP[0])
 	{
-		searchpath[searchpathindex[depthleft]-1] = '/';
+		searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
 		searchpath[searchpathindex[depthleft]] = 0;
 	}
 	else
@@ -447,8 +446,8 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 					depthleft++;
 			}
 
-			searchpath[searchpathindex[depthleft]-1]='/';
-			searchpath[searchpathindex[depthleft]]=0;
+			searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
+			searchpath[searchpathindex[depthleft]] = 0;
 		}
 		else if (!strcasecmp(searchname, dent->d_name))
 		{

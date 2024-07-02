@@ -3863,6 +3863,7 @@ DoneSection2:
 				linespeed = P_AproxDistance(lines[i].v2->x-lines[i].v1->x, lines[i].v2->y-lines[i].v1->y);
 
 				player->mo->angle = lineangle;
+				player->kartstuff[k_driftlock] = TICRATE/8; // seems like a good value so its not noticable and you still get the right angle
 
 				// SRB2Kart: Scale the speed you get from them!
 				// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
@@ -3900,17 +3901,15 @@ DoneSection2:
 				P_InstaThrust(player->mo, player->mo->angle, linespeed);
 
 				player->kartstuff[k_dashpadcooldown] = TICRATE/3;
-				player->kartstuff[k_drift] = 0;
-				player->kartstuff[k_driftcharge] = 0;
+				//player->kartstuff[k_drift] = 0;
+				//player->kartstuff[k_driftcharge] = 0;
 				player->kartstuff[k_pogospring] = 0;
 				S_StartSound(player->mo, sfx_spdpad);
 
-				{
-					sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
-					if (cv_kartvoices.value)
-						S_StartSound(player->mo, sfx_kbost1+pick);
-					//K_TauntVoiceTimers(player);
-				}
+				sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+				if (cv_kartvoices.value)
+					S_StartSound(player->mo, sfx_kbost1+pick);
+				//K_TauntVoiceTimers(player);
 			}
 			break;
 

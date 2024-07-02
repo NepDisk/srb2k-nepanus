@@ -8207,7 +8207,8 @@ static const char *const KARTSTUFF_LIST[] = {
 	"PANELTIMER",
 	"REALPANELTIMER",
 	"PANELSTACK",
-	"CHAINSOUND"
+	"CHAINSOUND",
+	"DRIFTLOCK"
 	
 };
 

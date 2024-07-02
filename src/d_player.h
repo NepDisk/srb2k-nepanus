@@ -353,6 +353,8 @@ typedef enum
 	
 	// Used for chaining thats done by combining a sneaker and a drift
 	k_chainsound,
+	
+	k_driftlock,
 
 	NUMKARTSTUFF
 } kartstufftype_t;

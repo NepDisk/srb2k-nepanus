@@ -7091,6 +7091,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_dashpadcooldown]--;
 	}
 
+	if (player->kartstuff[k_driftlock] > 0) // decrement timer for locking drift movement
+		player->kartstuff[k_driftlock]--;
+
 	// DKR style camera for boosting
 	if (player->kartstuff[k_boostcam] != 0 || player->kartstuff[k_destboostcam] != 0)
 	{

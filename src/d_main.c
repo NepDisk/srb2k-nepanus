@@ -1561,58 +1561,8 @@ void D_SRB2Main(void)
 	//
 	// search for maps
 	//
-	for (wadnum = 0; wadnum < mainwads; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
-
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)G_MapNumber(name);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					mapheaderinfo[num - 1]->menuflags |= LF2_EXISTSHACK;
-				}
-			}
-		}
-	}
-
-	//
-	// search for maps... again.
-	//
-	for (wadnum = mainwads+1; wadnum < numwadfiles; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
-
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)G_MapNumber(name);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					if (mapheaderinfo[num - 1]->menuflags & LF2_EXISTSHACK)
-						G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-					mapheaderinfo[num - 1]->menuflags |= LF2_EXISTSHACK;
-				}
-
-				CONS_Printf("%s\n", name);
-			}
-		}
-	}
+	P_InitMapData();
+	basenummapheaders = nummapheaders;
 
 	cht_Init();
 

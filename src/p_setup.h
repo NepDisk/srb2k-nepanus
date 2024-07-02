@@ -68,7 +68,7 @@ boolean P_AddWadFileLocal(const char *wadfilename);
 
 #define MAPRET_ADDED (1)
 #define MAPRET_CURRENTREPLACED (1<<1)
-UINT8 P_InitMapData(INT32 numexistingmapheaders);
+UINT8 P_InitMapData(void);
 
 // WARNING: The following functions should be grouped as follows:
 // any amount of PartialAdds followed by MultiSetups until returned true,

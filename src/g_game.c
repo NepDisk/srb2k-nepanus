@@ -163,7 +163,8 @@ struct quake quake;
 
 // Map Header Information
 mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
-INT32 nummapheaders;
+INT32 nummapheaders = 0;
+INT32 basenummapheaders = 0;
 
 static boolean exitgame = false;
 static boolean retrying = false;

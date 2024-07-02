@@ -217,7 +217,8 @@ typedef struct
   */
 typedef struct
 {
-	char * lumpname;       ///< Lump name can be really long
+	char *lumpname;       ///< Lump name can be really long
+	lumpnum_t lumpnum;	  ///< Lump number for the map
 	char lvlttl[22];       ///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];       ///< Subtitle for level
 	char zonttl[22];       ///< "ZONE" replacement name
@@ -292,7 +293,7 @@ typedef struct
 #define SAVE_ALWAYS   1
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
-extern INT32 nummapheaders;
+extern INT32 nummapheaders,basenummapheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
 

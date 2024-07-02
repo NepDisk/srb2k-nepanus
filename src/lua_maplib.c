@@ -216,6 +216,8 @@ enum slope_e {
 	slope_normal,
 	slope_zangle,
 	slope_xydirection,
+	slope_sourceline,
+	slope_refpos,
 	slope_flags
 };
 
@@ -227,6 +229,8 @@ static const char *const slope_opt[] = {
 	"normal",
 	"zangle",
 	"xydirection",
+	"sourceline",
+	"refpos",
 	"flags",
 	NULL};
 
@@ -1283,6 +1287,12 @@ static int slope_get(lua_State *L)
 	case slope_xydirection: // xydirection
 		lua_pushangle(L, slope->xydirection);
 		return 1;
+	case slope_sourceline: // source linedef
+		LUA_PushUserdata(L, slope->sourceline, META_LINE);
+		return 1;
+	case slope_refpos: // refpos
+		lua_pushinteger(L, slope->refpos);
+		return 1;
 	case slope_flags: // flags
 		lua_pushinteger(L, slope->flags);
 		return 1;
@@ -1306,9 +1316,11 @@ static int slope_set(lua_State *L)
 	switch(field) // todo: reorganize this shit
 	{
 	case slope_valid: // valid
+	case slope_sourceline: // sourceline
 	case slope_d: // d
 	case slope_flags: // flags
 	case slope_normal: // normal
+	case slope_refpos: // refpos
 	default:
 		return luaL_error(L, "pslope_t field " LUA_QS " cannot be set.", slope_opt[field]);
 	case slope_o: { // o

@@ -518,13 +518,6 @@ void LUA_InvalidateLevel(void)
 		LUA_InvalidateUserdata(&lines[i]);
 		LUA_InvalidateUserdata(lines[i].sidenum);
 	}
-	for (pslope_t *slope = slopelist; slope; slope = slope->next)
-	{
-		LUA_InvalidateUserdata(slope);
-		LUA_InvalidateUserdata(&slope->normal);
-		LUA_InvalidateUserdata(&slope->o);
-		LUA_InvalidateUserdata(&slope->d);
-	}
 	for (i = 0; i < numsides; i++)
 		LUA_InvalidateUserdata(&sides[i]);
 	for (i = 0; i < numvertexes; i++)

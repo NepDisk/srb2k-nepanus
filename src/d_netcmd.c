@@ -4331,22 +4331,6 @@ static void Command_ServerTeamChange_f(void)
 	SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
 }
 
-void P_SetPlayerSpectator(INT32 playernum)
-{
-	//Make sure you're in the right gametype.
-	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators())
-		return;
-
-	// Don't duplicate efforts.
-	if (players[playernum].spectator)
-		return;
-
-	players[playernum].spectator = true;
-	players[playernum].pflags &= ~PF_WANTSTOJOIN;
-
-	players[playernum].playerstate = PST_REBORN;
-}
-
 //todo: This and the other teamchange functions are getting too long and messy. Needs cleaning.
 static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 {
@@ -4476,37 +4460,81 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Safety first!
 	// (not respawning spectators here...)
-	wasspectator = (players[playernum].spectator == true);
-
-	if (!wasspectator)
+	if (!players[playernum].spectator)
 	{
-		if (gamestate == GS_LEVEL && players[playernum].mo)
+		if (players[playernum].mo)
 		{
-			// The following will call P_SetPlayerSpectator if successful
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 42000);
+			//if (!players[playernum].spectator)
+				P_DamageMobj(players[playernum].mo, NULL, NULL, 10000);
+			/*else
+			{
+				if (players[playernum].mo)
+				{
+					P_RemoveMobj(players[playernum].mo);
+					players[playernum].mo = NULL;
+				}
+				players[playernum].playerstate = PST_REBORN;
+			}*/
 		}
-
-		//...but because the above could return early under some contexts, we try again here
-		P_SetPlayerSpectator(playernum);
+		else
+			players[playernum].playerstate = PST_REBORN;
 	}
+	else
+		wasspectator = true;
+
+	players[playernum].pflags &= ~PF_WANTSTOJOIN;
 
 	//Now that we've done our error checking and killed the player
 	//if necessary, put the player on the correct team/status.
+	if (G_TagGametype())
+	{
+		if (!NetPacket.packet.newteam)
+		{
+			players[playernum].spectator = true;
+			players[playernum].pflags &= ~PF_TAGIT;
+			players[playernum].pflags &= ~PF_TAGGED;
+		}
+		else if (NetPacket.packet.newteam != 3) // .newteam == 1 or 2.
+		{
+			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+			players[playernum].pflags &= ~PF_TAGGED;//Just in case.
 
-	// This serves us in both teamchange contexts.
-	if (NetPacket.packet.newteam != 0)
-	{
-		players[playernum].pflags |= PF_WANTSTOJOIN;
-	}
-	else
-	{
-		players[playernum].pflags &= ~PF_WANTSTOJOIN;
-	}
+			if (NetPacket.packet.newteam == 1) //Make the player IT.
+				players[playernum].pflags |= PF_TAGIT;
+			else
+				players[playernum].pflags &= ~PF_TAGIT;
+		}
+		else // Just join the game.
+		{
+			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
 
-	if (G_GametypeHasTeams())
+			//If joining after hidetime in normal tag, default to being IT.
+			if (gametype == GT_TAG && (leveltime > (hidetime * TICRATE)))
+			{
+				NetPacket.packet.newteam = 1; //minor hack, causes the "is it" message to be printed later.
+				players[playernum].pflags |= PF_TAGIT; //make the player IT.
+			}
+		}
+	}
+	else if (G_GametypeHasTeams())
 	{
-		// This one is, of course, specific.
-		players[playernum].ctfteam = NetPacket.packet.newteam;
+		if (!NetPacket.packet.newteam)
+		{
+			players[playernum].ctfteam = 0;
+			players[playernum].spectator = true;
+		}
+		else
+		{
+			players[playernum].ctfteam = NetPacket.packet.newteam;
+			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+		}
+	}
+	else if (G_GametypeHasSpectators())
+	{
+		if (!NetPacket.packet.newteam)
+			players[playernum].spectator = true;
+		else
+			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
 	}
 
 	if (NetPacket.packet.autobalance)
@@ -4559,7 +4587,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		}
 	}
 
-	if (gamestate != GS_LEVEL || wasspectator == true)
+	if (gamestate != GS_LEVEL)
 		return;
 
 	demo_extradata[playernum] |= DXD_PLAYSTATE;

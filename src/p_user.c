@@ -4072,7 +4072,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	// Team changing in Team Match and CTF
 	// Pressing fire assigns you to a team that needs players if allowed.
 	// Partial code reproduction from p_tick.c autobalance code.
-	else if (G_GametypeHasTeams() && player->ctfteam == 0)
+	else if (G_GametypeHasTeams())
 	{		
 		INT32 changeto = 0;
 		INT32 z, numplayersred = 0, numplayersblue = 0;
@@ -4876,10 +4876,6 @@ void P_PlayerThink(player_t *player)
 	else
 		player->kartstuff[k_throwdir] = 0;
 #endif
-
-	// Add some extra randomization.
-	if (cmd->forwardmove)
-		P_RandomFixed();
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)

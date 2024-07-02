@@ -3699,8 +3699,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	splitscreenplayer = newplayernum/MAXPLAYERS;
 	newplayernum %= MAXPLAYERS;
 
-	G_AddPlayer(newplayernum);
+	// Clear player before joining, lest some things get set incorrectly
+	CL_ClearPlayer(newplayernum);
 
+	playeringame[newplayernum] = true;
+	G_AddPlayer(newplayernum);
 	if (newplayernum+1 > doomcom->numslots)
 		doomcom->numslots = (INT16)(newplayernum+1);
 

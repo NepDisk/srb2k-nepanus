@@ -14,6 +14,7 @@
 #include "doomdef.h"
 #include "d_main.h"
 #include "byteptr.h"
+#include "doomstat.h"
 #include "g_game.h"
 
 #include "p_local.h"
@@ -2902,8 +2903,9 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	}
 
 	// internal game map
-	maplumpname = G_BuildMapName(gamemap);
+	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
 	lastloadedmaplumpnum = W_CheckNumForName(maplumpname);
+	
 	if (lastloadedmaplumpnum == INT16_MAX)
 		I_Error("Map %s not found.\n", maplumpname);
 
@@ -3379,10 +3381,10 @@ UINT16 P_PartialAddWadFile(const char *wadfilename, boolean local)
 	{
 		name = lumpinfo->name;
 
-		if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
+		//if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
 		{
 			INT16 num;
-			if (name[5]!='\0')
+			if (name[MAXMAPLUMPNAME-1]!='\0')
 				continue;
 			num = (INT16)G_MapNumber(name);
 

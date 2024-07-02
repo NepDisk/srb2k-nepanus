@@ -3327,7 +3327,21 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				else if (fastcmp(word, "LEVEL"))
 				{
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
-					readlevelheader(f, word2, wad);
+					size_t len = strlen(word2);
+					if (len <= MAXMAPLUMPNAME-1)
+					{
+						if (len == 1)
+							readlevelheader(f, va("MAP0%s",word2),wad);
+						else if (len == 2)
+							readlevelheader(f, va("MAP%s",word2),wad);
+						else
+							readlevelheader(f, word2,wad);
+					}
+					else
+					{
+						deh_warning("Map header's lumpname %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXMAPLUMPNAME-1));
+						ignorelines(f);
+					}
 				}
 				else if (fastcmp(word, "CUTSCENE"))
 				{

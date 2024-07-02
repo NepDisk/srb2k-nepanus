@@ -294,6 +294,8 @@ typedef struct
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 extern INT32 nummapheaders;
 
+#define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
+
 enum TypeOfLevel
 {
 	TOL_SP          = 0x01, ///< Single Player

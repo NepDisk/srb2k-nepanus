@@ -3065,7 +3065,6 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
-		const char *mapname = G_BuildMapName(mapnum);
 
 		I_Assert(W_CheckNumForName(mapname) != LUMPERROR);
 

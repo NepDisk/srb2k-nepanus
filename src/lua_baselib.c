@@ -156,18 +156,18 @@ static int lib_isPlayerAdmin(lua_State *L)
 // M_MISC
 //////////////
 
-static int lib_mMapNumber(lua_State *L)
+static int lib_gMapNumber(lua_State *L)
 {
 	const char *arg = luaL_checkstring(L, 1);
-	size_t len = strlen(arg);
-	if (len == 2 || len == 5) {
-		char first = arg[len-2];
-		char second = arg[len-1];
-		lua_pushinteger(L, G_MapNumber(arg));
-	} else {
-		lua_pushinteger(L, 0);
-	}
-	return 1;
+	INT32 map;
+	
+	map = G_MapNumber(arg);
+	
+	if (map == INT32_MAX)
+		return 0;
+	
+	
+	return map;
 }
 
 // M_RANDOM
@@ -3197,10 +3197,6 @@ static luaL_Reg lib[] = {
 	{"EvalMath", lib_evalMath},
 	{"IsPlayerAdmin", lib_isPlayerAdmin},
 
-	// g_game
-	{"M_MapNumber",lib_mMapNumber},
-	{"G_MapNumber",lib_mMapNumber},
-
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},
 	{"P_RandomByte",lib_pRandomByte},
@@ -3386,6 +3382,7 @@ static luaL_Reg lib[] = {
 
 	// g_game
 	{"G_BuildMapName",lib_gBuildMapName},
+	{"G_MapNumber",lib_gMapNumber},
 	{"G_AddPlayer", lib_gAddPlayer},
 	{"G_RemovePlayer", lib_gRemovePlayer},
 	{"G_DoReborn",lib_gDoReborn},

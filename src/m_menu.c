@@ -7814,12 +7814,11 @@ static boolean M_ExitPandorasBox(void)
 
 static void M_ChangeLevel(INT32 choice)
 {
-	char mapname[6];
+	char mapname[MAXMAPLUMPNAME-1];
 	(void)choice;
 
 	strlcpy(mapname, G_BuildMapName(cv_nextmap.value), sizeof (mapname));
 	strlwr(mapname);
-	mapname[5] = '\0';
 
 	M_ClearMenus(true);
 	COM_BufAddText(va("map %s -gametype \"%s\"\n", mapname, cv_newgametype.string));

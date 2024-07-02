@@ -183,7 +183,7 @@ Checks if player is a local player and returns true if valid
 Resets players current camera.
 
 
-## M_MapNumber
+## G_MapNumber
 
 Returns mapnumber.
 

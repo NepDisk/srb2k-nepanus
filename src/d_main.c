@@ -1253,12 +1253,9 @@ static inline void D_MakeTitleString(char *s)
 //
 void D_SRB2Main(void)
 {
-	INT32 p, i;
+	INT32 p;
 	char srb2[82]; // srb2 title banner
 	char title[82];
-	lumpinfo_t *lumpinfo;
-	UINT16 wadnum;
-	char *name;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;

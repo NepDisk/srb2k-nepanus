@@ -4127,7 +4127,7 @@ void G_LoadGameData(void)
 
 	// TODO put another cipher on these things? meh, I don't care...
 	for (i = 0; i < NUMMAPS; i++)
-		if ((mapvisited[i] = READUINT8(save.p)) > MV_MAX)
+		if ((mapvisited[i] = READINT16(save.p)) > MV_MAX)
 			goto datacorrupt;
 
 	// To save space, use one bit per collected/achieved/unlocked flag
@@ -4238,7 +4238,7 @@ void G_SaveGameData(boolean force)
 
 	// TODO put another cipher on these things? meh, I don't care...
 	for (i = 0; i < NUMMAPS; i++)
-		WRITEUINT8(save.p, mapvisited[i]);
+		WRITEINT16(save.p, mapvisited[i]);
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;)
@@ -4765,21 +4765,16 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 
 	mapnamelen = strlen(mapname);
 
-	/* Count available maps; how ugly. */
-	for (i = 0, freqc = 0; i < NUMMAPS; ++i)
-	{
-		if (mapheaderinfo[i])
-			freqc++;
-	}
-
-	freq = ZZ_Calloc(freqc * sizeof (mapsearchfreq_t));
+	freq = ZZ_Calloc(nummapheaders * sizeof (mapsearchfreq_t));
 
 	wanttable = !!( freqp );
 
 	freqc = 0;
-	for (i = 0, mapnum = 1; i < NUMMAPS; ++i, ++mapnum)
-		if (mapheaderinfo[i])
+	for (i = 0, mapnum = 1; i < nummapheaders; ++i, ++mapnum)
 	{
+		if (!mapheaderinfo[i] || mapheaderinfo[i]->lumpnum == LUMPERROR)
+			continue;
+
 		if (!( realmapname = G_BuildMapTitle(mapnum) ))
 			continue;
 
@@ -4885,8 +4880,7 @@ void G_FreeMapSearch(mapsearchfreq_t *freq, INT32 freqc)
 
 INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 {
-	boolean usemapcode = false;
-	INT32 newmapnum = -1;
+	INT32 newmapnum;
 	size_t mapnamelen = strlen(mapname);
 	char *p;
 	
@@ -4906,45 +4900,27 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 				return newmapnum;
 		}
 	}
-	else if (mapnamelen == 2)/* maybe two digit code */
-	{
-		if (( newmapnum = G_MapNumber(mapname) ))
-			usemapcode = true;
-	}
-	else if (mapnamelen == 5 && strnicmp(mapname, "MAP", 3) == 0)
-	{
-		if (( newmapnum = G_MapNumber(mapname) ))
-			usemapcode = true;
-	}
 
-	if (!usemapcode)
-	{
-		/* Now detect map number in base 10, which no one asked for. */
-		newmapnum = strtol(mapname, &p, 10);
-		if (*p == '\0')/* we got it */
-		{
-			if (newmapnum < 1 || newmapnum > NUMMAPS)
-			{
-				CONS_Alert(CONS_ERROR, M_GetText("Invalid map number %d.\n"), newmapnum);
-				return 0;
-			}
-			usemapcode = true;
-		}
-		else
-		{
-			newmapnum = G_FindMap(mapname, realmapnamep, NULL, NULL);
-		}
-	}
+	/* Now detect map number in base 10, which no one asked for. */
+	newmapnum = strtol(mapname, &p, 10);
 
-	if (usemapcode)
+	if (*p == '\0')/* we got it */
 	{
-		/* we can't check mapheaderinfo for this hahahaha */
-		if (W_CheckNumForName(G_BuildMapName(newmapnum)) == LUMPERROR)
+		if (newmapnum < 1 || newmapnum > nummapheaders)
 			return 0;
-
-		if (realmapnamep)
-			(*realmapnamep) = G_BuildMapTitle(newmapnum);
+		if (!mapheaderinfo[newmapnum-1] || mapheaderinfo[newmapnum-1]->lumpnum == LUMPERROR)
+			return 0;
 	}
+	else
+	{
+		newmapnum = G_MapNumber(mapname);
+
+		if (newmapnum > nummapheaders)
+			return G_FindMap(mapname, realmapnamep, NULL, NULL);
+	}
+
+	if (realmapnamep)
+		(*realmapnamep) = G_BuildMapTitle(newmapnum);
 
 	return newmapnum;
 }

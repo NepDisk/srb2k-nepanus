@@ -1030,14 +1030,15 @@ static void readlevelheader(MYFILE *f, char * name, INT32 wadnum)
 		I_Error("Too many maps!");
 	}
 
-	if (mapheaderinfo[num-1])
-		G_SetGameModified(multiplayer, true); // only mark as a major mod if it replaces an already-existing mapheaderinfo
-
-
-	// Reset all previous map header information
-	// This call automatically saves all previous information when DELFILE is defined.
-	// We don't need to do it ourselves.
-	P_AllocMapHeader((INT16)(num-1));
+	if (num >= nummapheaders)
+	{
+		P_AllocMapHeader((INT16)(num -1));
+	}
+	else if (f->wad > mainwads)
+	{
+		// only mark as a major mod if it replaces an already-existing mapheaderinfo
+		G_SetGameModified(multiplayer, true);
+	}
 	
 	if (mapheaderinfo[num-1]->lumpname == NULL)
 	{

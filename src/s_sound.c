@@ -2205,7 +2205,10 @@ void S_Start(void)
 {
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+		if (mapheaderinfo[gamemap-1]->musname[0] == 0)
+			strncpy(mapmusname, va("%sM",mapheaderinfo[gamemap-1]->lumpname), 7);
+		else
+			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;

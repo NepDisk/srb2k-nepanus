@@ -296,8 +296,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	DEH_WriteUndoline("NEXTLEVEL", va("%d", mapheaderinfo[num]->nextlevel), UNDO_NONE);
 	mapheaderinfo[num]->nextlevel = (INT16)(i + 1);
 	DEH_WriteUndoline("MUSIC", mapheaderinfo[num]->musname, UNDO_NONE);
-	snprintf(mapheaderinfo[num]->musname, 7, "%sM", G_BuildMapName(i));
-	mapheaderinfo[num]->musname[6] = 0;
+	mapheaderinfo[num]->musname[0] = 0;
 	DEH_WriteUndoline("MUSICTRACK", va("%d", mapheaderinfo[num]->mustrack), UNDO_NONE);
 	mapheaderinfo[num]->mustrack = 0;
 	DEH_WriteUndoline("MUSICPOS", va("%d", mapheaderinfo[num]->muspos), UNDO_NONE);
@@ -371,6 +370,7 @@ void P_AllocMapHeader(INT16 i)
 	if (!mapheaderinfo[i])
 	{
 		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
+		mapheaderinfo[i]->lumpnum = LUMPERROR;
 		mapheaderinfo[i]->lumpname = NULL;
 		mapheaderinfo[i]->grades = NULL;
 		nummapheaders++;

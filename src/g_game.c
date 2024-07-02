@@ -4127,7 +4127,7 @@ void G_LoadGameData(void)
 
 	// TODO put another cipher on these things? meh, I don't care...
 	for (i = 0; i < NUMMAPS; i++)
-		if ((mapvisited[i] = READINT16(save.p)) > MV_MAX)
+		if ((mapvisited[i] = READUINT8(save.p)) > MV_MAX)
 			goto datacorrupt;
 
 	// To save space, use one bit per collected/achieved/unlocked flag
@@ -4238,7 +4238,7 @@ void G_SaveGameData(boolean force)
 
 	// TODO put another cipher on these things? meh, I don't care...
 	for (i = 0; i < NUMMAPS; i++)
-		WRITEINT16(save.p, mapvisited[i]);
+		WRITEUINT8(save.p, mapvisited[i]);
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;)

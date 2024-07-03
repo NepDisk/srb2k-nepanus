@@ -583,6 +583,8 @@ void M_StartupLocale(void);
 void *M_Memcpy(void* dest, const void* src, size_t n);
 char *va(const char *format, ...) FUNCPRINTF;
 char *M_GetToken(const char *inputString);
+UINT32 M_GetTokenPos(void);
+void M_SetTokenPos(UINT32 newPos);
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);

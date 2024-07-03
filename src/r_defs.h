@@ -78,6 +78,8 @@ typedef struct
 typedef struct
 {
 	fixed_t x, y, z;
+	boolean floorzset, ceilingzset;
+	fixed_t floorz, ceilingz;
 } vertex_t;
 
 // Forward of linedefs, for sectors.
@@ -379,6 +381,9 @@ typedef enum
 	ST_POSITIVE,
 	ST_NEGATIVE
 } slopetype_t;
+
+#define NUMLINEARGS 6
+#define NUMLINESTRINGARGS 2
 
 #define HORIZONSPECIAL 41
 

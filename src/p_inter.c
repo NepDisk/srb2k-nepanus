@@ -142,8 +142,9 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				|| player->kartstuff[k_itemheld])
 				return false;
 
-			if (weapon == 3 && player->kartstuff[k_itemtype] == KITEM_THUNDERSHIELD)
-				return false; // No stacking thunder shields!
+			if (weapon == 3 && K_GetShieldFromItem(player->kartstuff[k_itemtype]) != KSHIELD_NONE)
+				return false; // No stacking shields!
+
 		}
 	}
 
@@ -564,11 +565,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				mobj_t *spbexplode;
 
-				if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0 || player->kartstuff[k_hyudorotimer] > 0)
+				if (player->kartstuff[k_bubbleblowup] > 0)
 				{
-					//player->powers[pw_flashing] = 0;
 					K_DropHnextList(player);
-					K_StripItems(player);
+					special->extravalue1 = 2; // WAIT...
+					special->extravalue2 = 52; // Slightly over the respawn timer length
+					return;
 				}
 
 				S_StopSound(special); // Don't continue playing the gurgle or the siren
@@ -598,7 +600,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// kill
-			if (player->kartstuff[k_invincibilitytimer] > 0 || player->kartstuff[k_growshrinktimer] > 0)
+			if (player->kartstuff[k_invincibilitytimer] > 0
+				|| player->kartstuff[k_growshrinktimer] > 0
+				|| player->kartstuff[k_flamedash] > 0)
 			{
 				P_KillMobj(special, toucher, toucher);
 				return;
@@ -642,6 +646,32 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BALLOON: // SRB2kart
 			P_SetObjectMomZ(toucher, 20<<FRACBITS, false);
 			break;
+		case MT_BUBBLESHIELDTRAP:
+			if ((special->target == toucher || special->target == toucher->target) && (special->threshold > 0))
+				return;
+
+			if (special->tracer && !P_MobjWasRemoved(special->tracer))
+				return;
+
+			if (special->health <= 0 || toucher->health <= 0)
+				return;
+
+			if (!player->mo || player->spectator)
+				return;
+
+			// no interaction. Nor the way KK did it but being able to trap people in the back sounds aids - Nep
+			if (player->powers[pw_flashing] > 0 || player->kartstuff[k_hyudorotimer] > 0
+				|| player->kartstuff[k_squishedtimer] > 0 || player->kartstuff[k_spinouttimer] > 0)
+				return;
+
+			// attach to player!
+			P_SetTarget(&special->tracer, toucher);
+			toucher->flags |= MF_NOGRAVITY;
+			toucher->momx = (15*toucher->momx)/16; // Huge initial speed cut
+			toucher->momy = (15*toucher->momy)/16;
+			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
+			S_StartSound(special, sfx_s1a2);
+			return;
 		case MT_TUMBLEGEM:
 		case MT_TUMBLECOIN:
 			{

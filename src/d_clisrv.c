@@ -1148,7 +1148,7 @@ static boolean SV_SendServerConfig(INT32 node)
 }
 
 #ifdef JOININGAME
-#define SAVEGAMESIZE (768*1024)
+#define SAVEGAMESIZE (768*3072)
 
 static boolean SV_ResendingSavegameToAnyone(void)
 {

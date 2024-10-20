@@ -4638,7 +4638,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			// this decreases by one point at twice the cooldown time (ex cooldown of 2 seconds means, this counter decreases by one every 4 seconds), pretty much there to prevent a resynch loop
 			if ((gamestate_resend_counter[node] != 0) && (I_GetTime() % ((max(cv_resynchcooldown.value, 1) * TICRATE) *2) == 0))
+			{
 				gamestate_resend_counter[node]--;
+				DEBFILE(va("gamestate counter %d for node %d\n", gamestate_resend_counter[node], netconsole));
+			}
 
 			// Check player consistancy during the level
 			if (realstart <= gametic && realstart + TICQUEUE - 1 > gametic && gamestate == GS_LEVEL
@@ -4657,7 +4660,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					if (resendingsavegame[node])
 					{
 						gamestate_resend_counter[node]++;
-						DEBFILE(va("gamestate counter %d for player %d\n", gamestate_resend_counter[node], netconsole));
+						DEBFILE(va("gamestate counter %d for node %d\n", gamestate_resend_counter[node], netconsole));
 					}
 
 					if (cv_blamecfail.value)
@@ -4682,6 +4685,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 						SHORT(netbuffer->u.clientpak.consistancy)));
 
 					gamestate_resend_counter[node] = 0;
+					DEBFILE(va("gamestate counter %d for node %d\n", gamestate_resend_counter[node], netconsole));
 					break;
 				}
 			}
@@ -4793,31 +4797,6 @@ static void HandlePacketFromPlayer(SINT8 node)
 				else
 					buf[1] = KICK_MSG_PLAYER_QUIT;
 				SendNetXCmd(XD_KICK, &buf, 2);
-				//nodetoplayer[node] = -1;
-
-				/*if (nodetoplayer2[node] != -1 && nodetoplayer2[node] >= 0
-					&& playeringame[(UINT8)nodetoplayer2[node]])
-				{
-					buf[0] = nodetoplayer2[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
-					nodetoplayer2[node] = -1;
-				}
-
-				if (nodetoplayer3[node] != -1 && nodetoplayer3[node] >= 0
-					&& playeringame[(UINT8)nodetoplayer3[node]])
-				{
-					buf[0] = nodetoplayer3[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
-					nodetoplayer3[node] = -1;
-				}
-
-				if (nodetoplayer4[node] != -1 && nodetoplayer4[node] >= 0
-					&& playeringame[(UINT8)nodetoplayer4[node]])
-				{
-					buf[0] = nodetoplayer4[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
-					nodetoplayer4[node] = -1;
-				}*/
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
@@ -5784,7 +5763,7 @@ void NetKeepAlive(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker();
 #endif
-	
+
 #ifdef HOLEPUNCH
 	if (netgame && serverrunning)
 	{
@@ -5895,7 +5874,7 @@ void NetUpdate(void)
 		CL_SendClientCmd(); // send it
 
 	GetPackets(); // get packet from client or from server
-	
+
 	// client send the command after a receive of the server
 	// the server send before because in single player is beter
 

@@ -2286,6 +2286,7 @@ enum
 	pm_rst,
 	pm_rbowst,
 	pm_dsst,
+	pm_prb,
 	pm_stcks,
 	pm_stcksdim,
 	pm_itemodds,

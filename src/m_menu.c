@@ -2257,6 +2257,7 @@ static const char* OP_NeptuneTooltips[] =
 	"Duration of red mini-turbo.",
 	"Duration of rainbow mini-turbo.",
 	"Duration of mini-turbo for Snaking style drift.",
+	"Allow prolonged rocked boost when using Snaking style drift.",
 	//NULL,
 	"Allow boosts to stack together.",
 	"Diminish boost strength the more things are stacked on each other.",

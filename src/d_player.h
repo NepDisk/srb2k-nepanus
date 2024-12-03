@@ -33,6 +33,8 @@
 typedef enum
 {
 	SF_HIRES = 1, // Draw the sprite 2x as small?
+	SF_BIKE = 1<<1, // Inside Drift
+	SF_SNAKE = 1<<2, // Snake Drift
 } skinflags_t;
 
 //
@@ -355,6 +357,9 @@ typedef enum
 	k_chainsound,
 	
 	k_driftlock,
+
+	// vehicle style build backport
+	k_driftsnake,		// Snaking drift charge time to prevent mashing out boosts
 
 	NUMKARTSTUFF
 } kartstufftype_t;

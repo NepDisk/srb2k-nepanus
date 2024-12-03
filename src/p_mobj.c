@@ -8349,7 +8349,14 @@ void P_MobjThinker(mobj_t *mobj)
 				newy = mobj->target->y + P_ReturnThrustY(mobj->target, travelangle+ANGLE_180, 24*mobj->target->scale);
 				P_MoveOrigin(mobj, newx, newy, mobj->target->z);
 
-				mobj->angle = travelangle - ((ANGLE_90/5)*mobj->target->player->kartstuff[k_drift]);
+				if ((mobj->target->player->charflags & SF_BIKE))
+				{
+					mobj->angle = travelangle + ((ANGLE_90/5)*mobj->target->player->kartstuff[k_drift]);
+				}
+				else
+				{
+					mobj->angle = travelangle - ((ANGLE_90/5)*mobj->target->player->kartstuff[k_drift]);
+				}
 				P_SetScale(mobj, (mobj->destscale = mobj->target->scale));
 
 				if (mobj->target->player->kartstuff[k_driftcharge] >= K_GetKartDriftSparkValue(mobj->target->player)*4)

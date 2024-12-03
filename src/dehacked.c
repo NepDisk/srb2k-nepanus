@@ -8292,6 +8292,8 @@ struct {
 
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
+	{"SF_BIKE",SF_BIKE},
+	{"SF_SNAKE",SF_SNAKE},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},

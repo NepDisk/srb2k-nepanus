@@ -3264,6 +3264,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 
 	mo->player->kartstuff[k_drift] = 0;
 	mo->player->kartstuff[k_driftcharge] = 0;
+	mo->player->kartstuff[k_driftsnake] = 0;
 	mo->player->kartstuff[k_pogospring] = 0;
 
 	// trace along the three leading corners

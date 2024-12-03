@@ -1931,7 +1931,33 @@ static void P_3dMovement(player_t *player)
 	else
 	{
 		if (player->kartstuff[k_drift] != 0 && player->kartstuff[k_driftlock] == 0) // dont do this when driftlock is engaged ex: on zippers
-			movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+		{
+			if ((player->charflags & SF_BIKE) && (abs(player->kartstuff[k_drift]) >= 4))
+			{
+				movepushangle = player->mo->angle + (ANGLE_22h/5) * player->kartstuff[k_drift];
+				if (player->kartstuff[k_drift] > 0)
+				{
+					if (player->cmd.driftturn < 0)
+						movepushangle += ANGLE_22h/KART_FULLTURN * player->cmd.driftturn;
+				}
+				else
+				{
+					if (player->cmd.driftturn > 0)
+						movepushangle += ANGLE_22h/KART_FULLTURN * player->cmd.driftturn;
+				}
+			}
+			else
+			{
+				if ((player->charflags & SF_BIKE))
+				{
+					movepushangle = player->mo->angle - (ANGLE_45/5) * (5 - abs(player->kartstuff[k_drift]));
+				}
+				else
+				{
+					movepushangle = player->mo->angle - (ANGLE_45/5) * player->kartstuff[k_drift];
+				}
+			}
+		}
 		else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
 			movepushangle = (angle_t)player->kartstuff[k_boostangle];
 		else
@@ -3777,7 +3803,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		if (player->kartstuff[k_drift] != 0)
 		{
 			fixed_t panmax = (dist/5);
-			pan = FixedDiv(FixedMul(min((fixed_t)player->kartstuff[k_driftcharge], K_GetKartDriftSparkValue(player)), panmax), K_GetKartDriftSparkValue(player));
+			pan = FixedDiv(FixedMul(min((fixed_t)player->kartstuff[k_driftcharge], K_GetKartDriftSparkValue(player)), panmax), K_GetKartDriftSparkValue(player)) + player->kartstuff[k_driftsnake];
 			if (pan > panmax)
 				pan = panmax;
 			if (player->kartstuff[k_drift] < 0)

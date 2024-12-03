@@ -414,11 +414,15 @@ consvar_t cv_chainoffroad = {"chainoffroad", "Both", CV_NETVAR|CV_CHEAT, chainof
 // Additiveminiturbos
 consvar_t cv_additivemt  = 	{"additivemt", 	"Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+// Snaking style Prolonged Rocket Boost
+consvar_t cv_snakeprbenable  = 	{"snakeprbenable", 	"Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 // Mini-turbo adjustment cvars
 static CV_PossibleValue_t sparktics_cons_t[] = {{1, "MIN"}, {INT32_MAX, "MAX"}, {0, NULL}};
 consvar_t cv_bluesparktics = {"bluesparktics", "20", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_redsparktics = {"redsparktics", "50", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_rainbowsparktics = {"rainbowsparktics", "125", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_snakesparktics = {"snakesparktics", "35", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Stacking
 consvar_t cv_stacking = {"stacking", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};

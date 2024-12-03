@@ -2220,19 +2220,21 @@ static menuitem_t OP_NeptuneMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Blue Spark Time", 				&cv_bluesparktics, 	 	55},
 	{IT_STRING | IT_CVAR, NULL, "Red Spark Time", 				&cv_redsparktics, 	 	60},
 	{IT_STRING | IT_CVAR, NULL, "Rainbow Spark Time", 			&cv_rainbowsparktics, 	65},
+	{IT_STRING | IT_CVAR, NULL, "Snaking Spark Time", 			&cv_snakesparktics, 	70},
+	{IT_STRING | IT_CVAR, NULL, "Snaking PRB", 					&cv_snakeprbenable, 	75},
 	
 	//{IT_HEADER, NULL, "Stacking", NULL, 55},
-	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	75},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		80},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		85},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		90},
+	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	85},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		90},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		95},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		100},
 	
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap", 					&cv_speedcap, 			95}, .// No longer really needed since it was to fix a bug thats not even in this version :p
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap Value", 				&cv_speedcapval, 		100},
 	
 	//{IT_HEADER, NULL, "Items", NULL, 70},
-	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			100},
-	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			105},
+	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			110},
+	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			115},
 	
 
 
@@ -2254,6 +2256,7 @@ static const char* OP_NeptuneTooltips[] =
 	"Duration of blue mini-turbo.",
 	"Duration of red mini-turbo.",
 	"Duration of rainbow mini-turbo.",
+	"Duration of mini-turbo for Snaking style drift.",
 	//NULL,
 	"Allow boosts to stack together.",
 	"Diminish boost strength the more things are stacked on each other.",
@@ -2281,6 +2284,7 @@ enum
 	pm_bst,
 	pm_rst,
 	pm_rbowst,
+	pm_dsst,
 	pm_stcks,
 	pm_stcksdim,
 	pm_itemodds,

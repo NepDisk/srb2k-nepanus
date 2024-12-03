@@ -131,9 +131,11 @@ extern consvar_t cv_sneakerextendtype;
 extern consvar_t cv_chainoffroad;
 //additivemt
 extern consvar_t cv_additivemt;
+extern consvar_t cv_snakeprbenable;
 
 //mini-turbo adjustment cvars
 extern consvar_t cv_bluesparktics;
+extern consvar_t cv_snakesparktics;
 extern consvar_t cv_redsparktics;
 extern consvar_t cv_rainbowsparktics;
 
@@ -168,6 +170,9 @@ extern consvar_t cv_growmult;
 
 extern consvar_t cv_driftspeed;
 extern consvar_t cv_driftaccel;
+
+extern consvar_t cv_snakedriftspeed;
+extern consvar_t cv_snakedriftaccel;
 
 extern consvar_t cv_startspeed;
 extern consvar_t cv_startaccel;

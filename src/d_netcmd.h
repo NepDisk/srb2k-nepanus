@@ -131,13 +131,13 @@ extern consvar_t cv_sneakerextendtype;
 extern consvar_t cv_chainoffroad;
 //additivemt
 extern consvar_t cv_additivemt;
-extern consvar_t cv_snakeprbenable;
 
 //mini-turbo adjustment cvars
 extern consvar_t cv_bluesparktics;
-extern consvar_t cv_snakesparktics;
 extern consvar_t cv_redsparktics;
 extern consvar_t cv_rainbowsparktics;
+extern consvar_t cv_snakesparktics;
+extern consvar_t cv_snakeprbenable;
 
 //stacking
 extern consvar_t cv_stacking;

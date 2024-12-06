@@ -1017,6 +1017,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_bluesparktics);
 	CV_RegisterVar(&cv_redsparktics);
 	CV_RegisterVar(&cv_rainbowsparktics);
+	CV_RegisterVar(&cv_snakesparktics);
+	CV_RegisterVar(&cv_snakeprbenable);
 	
 	//Stacking
 	CV_RegisterVar(&cv_stacking);
@@ -1044,6 +1046,9 @@ void K_RegisterKartStuff(void)
 				   
 	CV_RegisterVar(&cv_driftspeed);
 	CV_RegisterVar(&cv_driftaccel);
+
+	CV_RegisterVar(&cv_snakedriftspeed);
+	CV_RegisterVar(&cv_snakedriftaccel);
 	
 	CV_RegisterVar(&cv_startspeed);
 	CV_RegisterVar(&cv_startaccel);
@@ -3978,9 +3983,16 @@ static void K_GetKartStackingOldBoostPower(player_t *player)
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
 	{
-
-		driftspeedboost = max(speedboost, cv_driftspeed.value); // + 25% 16384
-		driftaccelboost = max(accelboost, cv_driftaccel.value); // + 400% 262144
+		if ((player->charflags & SF_SNAKE))
+		{
+			driftspeedboost = max(speedboost, cv_snakedriftspeed.value); // + 25% 16384
+			driftaccelboost = max(accelboost, cv_snakedriftaccel.value); // + 400% 262144
+		}
+		else
+		{
+			driftspeedboost = max(speedboost, cv_driftspeed.value); // + 25% 16384
+			driftaccelboost = max(accelboost, cv_driftaccel.value); // + 400% 262144
+		}
 		player->kartstuff[k_driftstack] = 1;
 	}										
 	else
@@ -8216,9 +8228,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (player->speed > minspeed*2)
 			player->kartstuff[k_getsparks] = 1;
 		
-		if ((player->charflags & SF_SNAKE) && player->driftcharge > dstwo + 1)
+		if ((player->charflags & SF_SNAKE) && player->kartstuff[k_driftcharge] > dstwo + 1)
 		{
-			player->driftcharge = dstwo + 1;
+			player->kartstuff[k_driftcharge] = dstwo + 1;
 		}
 
 		// Sound whenever you get a different tier of sparks

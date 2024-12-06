@@ -183,6 +183,9 @@ extern consvar_t cv_hyuudoroaccel;
 extern consvar_t cv_speedcap;
 extern consvar_t cv_speedcapval;
 
+extern consvar_t cv_allowbike;
+extern consvar_t cv_allowsnake;
+
 //ItemOdds
 extern consvar_t cv_itemodds;
 

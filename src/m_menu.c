@@ -2228,16 +2228,16 @@ static menuitem_t OP_NeptuneMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		90},
 	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		95},
 	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		100},
+
+	{IT_STRING | IT_CVAR, NULL, "Allow Bike Style", 			&cv_allowbike, 		110},
+	{IT_STRING | IT_CVAR, NULL, "Allow Snaking Style", 			&cv_allowsnake, 		115},
 	
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap", 					&cv_speedcap, 			95}, .// No longer really needed since it was to fix a bug thats not even in this version :p
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap Value", 				&cv_speedcapval, 		100},
 	
 	//{IT_HEADER, NULL, "Items", NULL, 70},
-	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			110},
-	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			115},
-	
-
-
+	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			125},
+	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			130},
 };
 
 static const char* OP_NeptuneTooltips[] =
@@ -2263,6 +2263,9 @@ static const char* OP_NeptuneTooltips[] =
 	"Diminish boost strength the more things are stacked on each other.",
 	"Apply a bonus top speed to lower speeds only while boosting.",
 	"Due to oversights the stacking code wasn't accurate in earlier versions.\nThis recreates those behaviours.\nA stacking_growmult value of 0.4 should be used for accuracy",
+
+	"Allow Bike style drift.",
+	"Allow Snaking style drift.",
 	
 	//"Should Maximum speed be capped?",
 	//"Value of Maximum speed cap.",
@@ -2289,6 +2292,8 @@ enum
 	pm_prb,
 	pm_stcks,
 	pm_stcksdim,
+	pm_bikeok,
+	pm_snakeok,
 	pm_itemodds,
 	pm_customitemtable,
 };

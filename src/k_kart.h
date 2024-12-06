@@ -50,6 +50,8 @@ extern CV_PossibleValue_t speedo_cons_t[NUMSPEEDOSTUFF];
 
 boolean K_IsPlayerLosing(player_t *player);
 boolean K_IsPlayerWanted(player_t *player);
+boolean K_IsPlayerStyleBike(player_t *player);
+boolean K_IsPlayerStyleSnake(player_t *player);
 void K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);

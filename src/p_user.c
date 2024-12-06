@@ -1932,7 +1932,7 @@ static void P_3dMovement(player_t *player)
 	{
 		if (player->kartstuff[k_drift] != 0 && player->kartstuff[k_driftlock] == 0) // dont do this when driftlock is engaged ex: on zippers
 		{
-			if ((player->charflags & SF_BIKE) && (abs(player->kartstuff[k_drift]) >= 4))
+			if (K_IsPlayerStyleBike(player) && (abs(player->kartstuff[k_drift]) >= 4))
 			{
 				movepushangle = player->mo->angle + (ANGLE_22h/5) * player->kartstuff[k_drift];
 				if (player->kartstuff[k_drift] > 0)
@@ -1948,7 +1948,7 @@ static void P_3dMovement(player_t *player)
 			}
 			else
 			{
-				if ((player->charflags & SF_BIKE))
+				if (K_IsPlayerStyleBike(player))
 				{
 					movepushangle = player->mo->angle - (ANGLE_45/5) * (5 - abs(player->kartstuff[k_drift]));
 				}

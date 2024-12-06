@@ -468,6 +468,10 @@ consvar_t cv_hyuudoroaccel = {"stacking_hyuudoroaccel", "0.5", CV_NETVAR|CV_FLOA
 consvar_t cv_speedcap = {"stacking_speedcap", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_speedcapval = {"stacking_speedcapval", "128", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+static CV_PossibleValue_t allowstyle_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
+consvar_t cv_allowbike = {"allowbike", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_allowsnake = {"allowsnake", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 // Fuckal Odds`
 static CV_PossibleValue_t itemoddstype_cons_t[] = {{1, "Uranus"}, {2, "CEP"}, {0, NULL}};
 consvar_t cv_itemodds = {"itemoddsystem", "CEP", CV_NETVAR|CV_CHEAT, itemoddstype_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};

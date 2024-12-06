@@ -1058,7 +1058,9 @@ void K_RegisterKartStuff(void)
 	
 	CV_RegisterVar(&cv_speedcap);
 	CV_RegisterVar(&cv_speedcapval);
-				   
+
+	CV_RegisterVar(&cv_allowbike);
+	CV_RegisterVar(&cv_allowsnake);
 	
 	//Itemodds
 	CV_RegisterVar(&cv_itemodds);
@@ -1503,6 +1505,20 @@ boolean K_IsPlayerWanted(player_t *player)
 		if (player == &players[battlewanted[i]])
 			return true;
 	}
+	return false;
+}
+
+boolean K_IsPlayerStyleBike(player_t *player)
+{
+	if (cv_allowbike.value)
+		return (player->charflags & SF_BIKE) || cv_allowbike.value == 2;
+	return false;
+}
+
+boolean K_IsPlayerStyleSnake(player_t *player)
+{
+	if (cv_allowsnake.value)
+		return (player->charflags & SF_SNAKE) || cv_allowsnake.value == 2;
 	return false;
 }
 
@@ -3639,7 +3655,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
 	{
-		if ((player->charflags & SF_SNAKE))
+		if (K_IsPlayerStyleSnake(player))
 		{
 			speedboost = max(speedboost, FRACUNIT/6); // + 16.66%
 		}
@@ -3777,7 +3793,7 @@ static void K_GetKartStackingBoostPower(player_t *player)
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
 	{
-		if ((player->charflags & SF_SNAKE))
+		if (K_IsPlayerStyleSnake(player))
 		{
 			ADDBOOST(cv_snakedriftspeed.value, cv_snakedriftaccel.value, 0,0); // + 15% 16384, + 400% 262144, 0
 		}
@@ -3983,7 +3999,7 @@ static void K_GetKartStackingOldBoostPower(player_t *player)
 
 	if (player->kartstuff[k_driftboost]) // Drift Boost
 	{
-		if ((player->charflags & SF_SNAKE))
+		if (K_IsPlayerStyleSnake(player))
 		{
 			driftspeedboost = max(speedboost, cv_snakedriftspeed.value); // + 25% 16384
 			driftaccelboost = max(accelboost, cv_snakedriftaccel.value); // + 400% 262144
@@ -5030,7 +5046,7 @@ static void K_SpawnDriftSparks(player_t *player)
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_DRIFTSPARK);
 
 		P_SetTarget(&spark->target, player->mo);
-		if ((player->charflags & SF_BIKE))
+		if (K_IsPlayerStyleBike(player))
 		{
 			spark->angle = travelangle+(ANGLE_45/5)*player->kartstuff[k_drift];
 		}
@@ -5128,7 +5144,7 @@ static void K_SpawnDriftSparksBurst(player_t *player)
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_DRIFTSPARK);
 
 		P_SetTarget(&spark->target, player->mo);
-		if ((player->charflags & SF_BIKE))
+		if (K_IsPlayerStyleBike(player))
 		{
 			spark->angle = travelangle+(ANGLE_45/5)*player->kartstuff[k_drift];
 		}
@@ -7890,9 +7906,9 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 {
 	INT16 basedrift, driftangle;
 	fixed_t driftweight = player->kartweight*14; // 12
-	if ((player->charflags & SF_BIKE))
+	if (K_IsPlayerStyleBike(player))
 		driftweight -= player->kartweight*4; //10
-	if ((player->charflags & SF_SNAKE))
+	if (K_IsPlayerStyleSnake(player))
 		driftweight += player->kartweight*2; //16 (12 for bikes)
 
 	// If they aren't drifting or on the ground this doesn't apply
@@ -7963,7 +7979,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	INT32 minsparks = dsone;
 
-	if ((player->charflags & SF_SNAKE))
+	if (K_IsPlayerStyleSnake(player))
 	{
 		minsparks = dstwo;
 	}
@@ -7991,7 +8007,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		&& onground)
 	{
 
-		if (!(player->charflags & SF_SNAKE))
+		if (!K_IsPlayerStyleSnake(player))
 		{
 			if (cv_additivemt.value)
 			{	
@@ -8014,7 +8030,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		&& player->kartstuff[k_driftcharge] < dsthree
 		&& onground)
 	{
-		if ((player->charflags & SF_SNAKE))
+		if (K_IsPlayerStyleSnake(player))
 		{
 			// PRB
 			if (cv_snakeprbenable.value && (player->kartstuff[k_sneakertimer] > 0) && (player->kartstuff[k_sneakertimer] < cv_snakesparktics.value))
@@ -8129,7 +8145,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			if (player->kartstuff[k_drift] > 5)
 				player->kartstuff[k_drift] = 5;
 
-			if ((player->charflags & SF_SNAKE))
+			if (K_IsPlayerStyleSnake(player))
 			{
 				if (player->cmd.driftturn < 0) // Outward, snake timing OK
 				{
@@ -8147,7 +8163,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 						player->kartstuff[k_driftsnake] = 0;
 						if (player->kartstuff[k_driftcharge] + driftadditive > dstwo)
 						{
-							driftadditive = player->kartstuff[k_driftcharge] + driftadditive + 2 - dstwo;
+							driftadditive = player->kartstuff[k_driftcharge] + driftadditive + 1 - dstwo;
 						}
 					}
 					else
@@ -8177,7 +8193,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			if (player->kartstuff[k_drift] < -5)
 				player->kartstuff[k_drift] = -5;
 
-			if ((player->charflags & SF_SNAKE))
+			if (K_IsPlayerStyleSnake(player))
 			{
 				if (player->cmd.driftturn > 0) // Outward, snake timing OK
 				{
@@ -8195,7 +8211,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 						player->kartstuff[k_driftsnake] = 0;
 						if (player->kartstuff[k_driftcharge] + driftadditive > dstwo)
 						{
-							driftadditive = player->kartstuff[k_driftcharge] + driftadditive + 2 - dstwo;
+							driftadditive = player->kartstuff[k_driftcharge] + driftadditive + 1 - dstwo;
 						}
 					}
 					else
@@ -8228,9 +8244,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (player->speed > minspeed*2)
 			player->kartstuff[k_getsparks] = 1;
 		
-		if ((player->charflags & SF_SNAKE) && player->kartstuff[k_driftcharge] > dstwo + 1)
+		if (K_IsPlayerStyleSnake(player) && player->kartstuff[k_driftcharge] > dstwo)
 		{
-			player->kartstuff[k_driftcharge] = dstwo + 1;
+			player->kartstuff[k_driftcharge] = dstwo;
 		}
 
 		// Sound whenever you get a different tier of sparks
@@ -8243,7 +8259,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			if (P_IsLocalPlayer(player)) // UGHGHGH...
 				S_StartSoundAtVolume(player->mo, sfx_s3ka2, 192); // Ugh...
 			
-			if ((player->charflags & SF_SNAKE) && (player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone))
+			if (K_IsPlayerStyleSnake(player) && (player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone))
 			{
 				K_SpawnDriftSparksBurst(player);
 			}
@@ -12175,6 +12191,19 @@ static void K_drawDriftGauge(void)
 	int dup = vid.dupx;
 	int i;
 
+	if (K_IsPlayerStyleSnake(stplyr))
+	{
+		driftcharge = 0;
+
+		if (stplyr->kartstuff[k_driftcharge] > driftval)
+			driftcharge = driftval*2;
+
+		driftcharge += driftval/10 * stplyr->kartstuff[k_driftsnake];
+
+		if (stplyr->kartstuff[k_driftcharge] > driftval*2)
+			driftcharge = driftval*2;
+	}
+
 	UINT8 driftcolors[3][4] = {
 		{0, 0, 10, 16},       // no drift
 		{215, 215, 204, 253}, // blue
@@ -12253,7 +12282,7 @@ skipcrap:
 					V_DrawMappedPatch(cv_driftgaugestyle.value == 2 ? basex + dup*11 : basex, basey, V_NOSCALESTART|V_OFFSET|drifttrans, cv_driftgaugestyle.value == 2 ? driftgaugesmallcolor : driftgaugecolor, colormap);
 				}
 
-				if (driftcharge >= driftval*4) // rainbow sparks
+				if (driftcharge >= driftval*4 && !K_IsPlayerStyleSnake(stplyr)) // rainbow sparks
 				{
 					cmap = R_GetTranslationColormap(TC_RAINBOW, 1 + leveltime % (MAXSKINCOLORS-1),GTC_CACHE);
 					for	(i = 0; i < 4; i++)
@@ -12273,6 +12302,10 @@ skipcrap:
 
 				// right, also draw a cool number
 				//SG_DrawPaddedNum(v, basex + (dup*32), basey, driftcharge*100 / driftval, 3, "PINGN", V_NOSCALESTART|V_OFFSET|drifttrans, cmap)
+				if (K_IsPlayerStyleSnake(stplyr))
+				{
+					driftval *= 2;
+				}
 				if (cv_driftgaugestyle.value == 3)
 					V_DrawPaddedTallColorNum(basex + (dup*32), basey, V_NOSCALESTART|V_OFFSET|drifttrans, driftcharge*100 / driftval, 3, cmap);
 				else
@@ -12280,11 +12313,15 @@ skipcrap:
 			break;
 		case 4:
 			{
-				if (driftcharge >= driftval*4)
+				if (driftcharge >= driftval*4 && !K_IsPlayerStyleSnake(stplyr))
 					cmap = R_GetTranslationColormap(TC_RAINBOW, 1 + leveltime % (MAXSKINCOLORS-1),GTC_CACHE);
 				else
 					cmap =  R_GetTranslationColormap(TC_RAINBOW, driftskins[level],GTC_CACHE);
 
+				if (K_IsPlayerStyleSnake(stplyr))
+				{
+					driftval *= 2;
+				}
 				V_DrawPaddedTallColorNum(basex + (dup*16), basey, V_NOSCALESTART|V_OFFSET|drifttrans, driftcharge*100 / driftval, 3, cmap);
 			}
 			break;

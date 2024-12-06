@@ -3641,7 +3641,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		if ((player->charflags & SF_SNAKE))
 		{
-			speedboost = max(speedboost, FRACUNIT/6); // + 25%
+			speedboost = max(speedboost, FRACUNIT/6); // + 16.66%
 		}
 		else
 		{

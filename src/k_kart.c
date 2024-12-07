@@ -9695,6 +9695,7 @@ static patch_t *kp_check[6];
 static patch_t *kp_eggnum[4];
 
 static patch_t *kp_fpview[3];
+static patch_t *kp_fpview_bike[3];
 static patch_t *kp_inputwheel[5];
 
 static patch_t *kp_challenger[25];
@@ -10022,6 +10023,13 @@ void K_LoadKartHUDGraphics(void)
 	kp_fpview[0] = 				W_CachePatchName("VIEWA0", PU_HUDGFX);
 	kp_fpview[1] =				W_CachePatchName("VIEWB0D0", PU_HUDGFX);
 	kp_fpview[2] = 				W_CachePatchName("VIEWC0E0", PU_HUDGFX);
+
+	if (bikefpview)
+	{
+		kp_fpview_bike[0] = 		W_CachePatchName("VIEWF0", PU_HUDGFX);
+		kp_fpview_bike[1] =			W_CachePatchName("VIEWG0I0", PU_HUDGFX);
+		kp_fpview_bike[2] = 		W_CachePatchName("VIEWH0J0", PU_HUDGFX);
+	}
 
 	// Input UI Wheel
 	sprintf(buffer, "K_WHEELx");
@@ -12184,6 +12192,7 @@ static void K_drawDriftGauge(void)
 {
 	INT32 driftval = K_GetKartDriftSparkValue(stplyr);
 	INT32 driftcharge = min(driftval*4, stplyr->kartstuff[k_driftcharge]);
+	INT32 driftsnake;
 	vector2_t pos = {0};
 	fixed_t basex,basey;
 	INT32 drifttrans = 0;
@@ -12198,10 +12207,13 @@ static void K_drawDriftGauge(void)
 		if (stplyr->kartstuff[k_driftcharge] > driftval)
 			driftcharge = driftval*2;
 
-		driftcharge += driftval/10 * stplyr->kartstuff[k_driftsnake];
+		driftsnake = driftval/10 * stplyr->kartstuff[k_driftsnake];
+		if (driftcharge + driftsnake > driftval*2)
+			driftsnake *= 2;
+		driftcharge += driftsnake;
 
 		if (stplyr->kartstuff[k_driftcharge] > driftval*2)
-			driftcharge = driftval*2;
+			driftcharge = driftval*4;
 	}
 
 	UINT8 driftcolors[3][4] = {
@@ -12304,7 +12316,7 @@ skipcrap:
 				//SG_DrawPaddedNum(v, basex + (dup*32), basey, driftcharge*100 / driftval, 3, "PINGN", V_NOSCALESTART|V_OFFSET|drifttrans, cmap)
 				if (K_IsPlayerStyleSnake(stplyr))
 				{
-					driftval *= 2;
+					driftval *= 4;
 				}
 				if (cv_driftgaugestyle.value == 3)
 					V_DrawPaddedTallColorNum(basex + (dup*32), basey, V_NOSCALESTART|V_OFFSET|drifttrans, driftcharge*100 / driftval, 3, cmap);
@@ -12320,7 +12332,7 @@ skipcrap:
 
 				if (K_IsPlayerStyleSnake(stplyr))
 				{
-					driftval *= 2;
+					driftval *= 4;
 				}
 				V_DrawPaddedTallColorNum(basex + (dup*16), basey, V_NOSCALESTART|V_OFFSET|drifttrans, driftcharge*100 / driftval, 3, cmap);
 			}
@@ -12976,6 +12988,9 @@ static void K_drawKartFirstPerson(void)
 
 			if (stplyr->mo->momz > 0) // TO-DO: Draw more of the kart so we can remove this if!
 				yoffs += stplyr->mo->momz/3;
+			
+			if (bikefpview && K_IsPlayerStyleBike(stplyr) && stplyr->kartstuff[k_drift])
+				xoffs *= -1;
 
 			if (encoremode)
 				x -= xoffs;
@@ -12999,7 +13014,15 @@ static void K_drawKartFirstPerson(void)
 			colmap = R_GetTranslationColormap(TC_RAINBOW, stplyr->mo->color, GTC_CACHE);
 	}
 
-	V_DrawFixedPatch(x, y, scale, splitflags, kp_fpview[target], colmap);
+	if (bikefpview && K_IsPlayerStyleBike(stplyr))
+	{
+		scale *= 3;
+		V_DrawFixedPatch(x, y, scale/2, splitflags, kp_fpview_bike[target], colmap);
+	}
+	else
+	{
+		V_DrawFixedPatch(x, y, scale, splitflags, kp_fpview[target], colmap);
+	}
 
 	if (stplyr == &players[displayplayers[1]] && splitscreen)
 		{ pnum[1] = pn; turn[1] = tn; drift[1] = dr; }

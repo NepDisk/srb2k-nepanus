@@ -1213,6 +1213,8 @@ boolean found_extra2_kart;
 boolean found_kv_kart;
 boolean found_extra3_kart;
 
+boolean found_styles_kart;
+
 boolean xtra_speedo; // extra speedometer check
 boolean xtra_speedo_clr; // extra speedometer colour check
 boolean xtra_speedo3; // 80x 11 extra speedometer check
@@ -1225,6 +1227,8 @@ boolean big_lap_color; // bigger lap counter but colour
 boolean kartzspeedo; // kartZ speedometer
 boolean statdp; // New stat
 
+boolean bikefpview; // Bike first person view
+
 static void IdentifyVersion(void)
 {
 	const char *srb2waddir = NULL;
@@ -1232,6 +1236,8 @@ static void IdentifyVersion(void)
 	found_extra2_kart = false;
 	found_kv_kart = false;
 	found_extra3_kart = false;
+
+	found_styles_kart = false;
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'srb2.srb' is found
@@ -1304,6 +1310,12 @@ static void IdentifyVersion(void)
 	if (FIL_ReadFileOK(va(pandf,srb2waddir,"extra3.kart"))) {
 		D_AddFile(va(pandf,srb2waddir,"extra3.kart"), startupwadfiles);
 		found_extra3_kart = true;
+	}
+
+	// styles
+	if (FIL_ReadFileOK(va(pandf,srb2waddir,"styles.kart"))) {
+		D_AddFile(va(pandf,srb2waddir,"styles.kart"), startupwadfiles);
+		found_styles_kart = true;
 	}
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1582,7 +1594,7 @@ void D_SRB2Main(void)
 	unsigned last_speedo_i = 0;
 #define PUSHSPEEDO(id, name) { ++last_speedo_i; speedo_cons_temp[last_speedo_i].value = id; speedo_cons_temp[last_speedo_i].strvalue = name; }
 
-	if (found_extra_kart || found_extra2_kart || found_extra3_kart || found_kv_kart) // found the funny, add it in!
+	if (found_extra_kart || found_extra2_kart || found_extra3_kart || found_kv_kart || found_styles_kart) // found the funny, add it in!
 	{
 		// HAYA: These are seperated for a reason lmao
 		if (found_extra_kart)
@@ -1592,6 +1604,9 @@ void D_SRB2Main(void)
 		if (found_kv_kart)
 			mainwads++;
 		if (found_extra3_kart)
+			mainwads++;
+
+		if (found_styles_kart)
 			mainwads++;
 
 		// now check for extra speedometer stuff
@@ -1653,6 +1668,14 @@ void D_SRB2Main(void)
 
 			if (W_LumpExists("SC_SM3TC"))
 				xtra_speedo_clr3 = true;
+		}
+
+		if (found_styles_kart)
+		{
+			if (W_CheckMultipleLumps("VIEWF0", "VIEWG0I0", "VIEWH0J0", NULL))
+			{
+				bikefpview = true;
+			}
 		}
 	}
 

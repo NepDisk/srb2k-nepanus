@@ -32,6 +32,8 @@ extern boolean found_extra2_kart; // for use in k_kart.c
 extern boolean found_kv_kart; // for use in k_kart.c
 extern boolean found_extra3_kart; // for use in k_kart.c
 
+extern boolean found_styles_kart; // for use in k_kart.c
+
 extern boolean xtra_speedo; // extra speedometer check
 extern boolean xtra_speedo_clr; // extra speedometer colour check
 extern boolean xtra_speedo3; // 80x11 extra speedometer check
@@ -43,6 +45,8 @@ extern boolean big_lap; // bigger lap counter
 extern boolean big_lap_color; //bigger lap counter but colour
 extern boolean kartzspeedo; //kartZ speedo
 extern boolean statdp; //stat display for extended player setup
+
+extern boolean bikefpview; // Bike first person view
 
 void D_AddAutoloadFiles(void);
 

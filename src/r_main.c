@@ -432,6 +432,11 @@ angle_t R_PlayerSliptideAngle(player_t *player)
 	return FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), mo->player->sliproll*(mo->player->sliptidemem));
 }
 
+angle_t R_PlayerRocketRollAngle(player_t *player)
+{
+	return ANGLE_MAX / 15 * player->kartstuff[k_rocketdriftroll];
+}
+
 INT32 R_GetHudUncap(void)
 {
 	return cv_uncappedhud.value ? rendertimefrac & FRACMASK : 0;

@@ -421,6 +421,7 @@ consvar_t cv_bluesparktics = {"bluesparktics", "20", CV_NETVAR|CV_CHEAT, sparkti
 consvar_t cv_redsparktics = {"redsparktics", "50", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_rainbowsparktics = {"rainbowsparktics", "125", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_snakesparktics = {"snakesparktics", "35", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketsparktics = {"rocketsparktics", "35", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 // Snaking style Prolonged Rocket Boost
 consvar_t cv_snakeprbenable  = 	{"snakeprbenable", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -455,9 +456,10 @@ consvar_t cv_growmult = {"stacking_growmult", "-0.3", CV_NETVAR|CV_FLOAT|CV_CHEA
 
 consvar_t cv_driftspeed = {"stacking_drfitspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_driftaccel = {"stacking_drfitaccel", "4.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-
 consvar_t cv_snakedriftspeed = {"stacking_snakedrfitspeed", "0.1666", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_snakedriftaccel = {"stacking_snakedrfitaccel", "4.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketdriftspeed = {"stacking_rocketdrfitspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketdriftaccel = {"stacking_rocketdrfitaccel", "5.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_startspeed = {"stacking_startspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_startaccel = {"stacking_startaccel", "6.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -471,6 +473,7 @@ consvar_t cv_speedcapval = {"stacking_speedcapval", "128", CV_NETVAR|CV_FLOAT|CV
 static CV_PossibleValue_t allowstyle_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 consvar_t cv_allowbike = {"allowbike", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_allowsnake = {"allowsnake", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_allowrocket = {"allowrocket", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Fuckal Odds`
 static CV_PossibleValue_t itemoddstype_cons_t[] = {{1, "Uranus"}, {2, "CEP"}, {0, NULL}};

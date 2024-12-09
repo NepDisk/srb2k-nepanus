@@ -8070,8 +8070,9 @@ static const char *const KARTSTUFF_LIST[] = {
 	"CHAINSOUND",
 	"DRIFTLOCK",
 
-	"DRIFTSNAKE"
-	
+	"DRIFTSNAKE",
+	"ROCKETDRIFTROLL",
+	"ROCKETDRIFTANGLE",
 };
 
 static const char *const HUDITEMS_LIST[] = {

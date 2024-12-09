@@ -32,9 +32,10 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_HIRES = 1, // Draw the sprite 2x as small?
-	SF_BIKE = 1<<1, // Inside Drift
-	SF_SNAKE = 1<<2, // Snake Drift
+	SF_HIRES = 1, 		// Draw the sprite 2x as small?
+	SF_BIKE = 1<<1, 	// Inside Drift
+	SF_SNAKE = 1<<2, 	// Snake Drift
+	SF_ROCKET = 1<<3, 	// Rocket Racing Drift
 } skinflags_t;
 
 //
@@ -360,6 +361,8 @@ typedef enum
 
 	// vehicle style build backport
 	k_driftsnake,		// Snaking drift charge time to prevent mashing out boosts
+	k_rocketdriftroll,
+	k_rocketdriftangle,
 
 	NUMKARTSTUFF
 } kartstufftype_t;

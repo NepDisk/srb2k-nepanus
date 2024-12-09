@@ -1018,6 +1018,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_redsparktics);
 	CV_RegisterVar(&cv_rainbowsparktics);
 	CV_RegisterVar(&cv_snakesparktics);
+	CV_RegisterVar(&cv_rocketsparktics);
 	CV_RegisterVar(&cv_snakeprbenable);
 	
 	//Stacking
@@ -1046,9 +1047,10 @@ void K_RegisterKartStuff(void)
 				   
 	CV_RegisterVar(&cv_driftspeed);
 	CV_RegisterVar(&cv_driftaccel);
-
 	CV_RegisterVar(&cv_snakedriftspeed);
 	CV_RegisterVar(&cv_snakedriftaccel);
+	CV_RegisterVar(&cv_rocketdriftspeed);
+	CV_RegisterVar(&cv_rocketdriftaccel);
 	
 	CV_RegisterVar(&cv_startspeed);
 	CV_RegisterVar(&cv_startaccel);
@@ -1061,6 +1063,7 @@ void K_RegisterKartStuff(void)
 
 	CV_RegisterVar(&cv_allowbike);
 	CV_RegisterVar(&cv_allowsnake);
+	CV_RegisterVar(&cv_allowrocket);
 	
 	//Itemodds
 	CV_RegisterVar(&cv_itemodds);
@@ -1520,6 +1523,20 @@ boolean K_IsPlayerStyleSnake(player_t *player)
 	if (cv_allowsnake.value)
 		return (player->charflags & SF_SNAKE) || cv_allowsnake.value == 2;
 	return false;
+}
+
+boolean K_IsPlayerStyleRocket(player_t *player)
+{
+	if (cv_allowrocket.value)
+		return (player->charflags & SF_ROCKET) || cv_allowrocket.value == 2;
+	return false;
+}
+
+INT32 K_GetKartDriftTurnTime(player_t *player)
+{
+	if (K_IsPlayerStyleRocket(player))
+		return 15;
+	return 5;
 }
 
 //{ SRB2kart Roulette Code - Position Based
@@ -3193,6 +3210,7 @@ static void K_SpawnDashDustRelease(player_t *player)
 	mobj_t *dust;
 	angle_t travelangle;
 	INT32 i;
+	INT32 driftdiv = K_GetKartDriftTurnTime(player);
 
 	I_Assert(player != NULL);
 	I_Assert(player->mo != NULL);
@@ -3206,8 +3224,17 @@ static void K_SpawnDashDustRelease(player_t *player)
 
 	travelangle = player->mo->angle;
 
-	if (player->kartstuff[k_drift] || player->kartstuff[k_driftend])
-		travelangle -= (ANGLE_45/5)*player->kartstuff[k_drift];
+	if (player->kartstuff[k_rocketdriftroll])
+	{
+		travelangle += ANGLE_90/15 * player->kartstuff[k_rocketdriftroll];
+	}
+	else if (player->kartstuff[k_drift] || player->kartstuff[k_driftend])
+	{
+		if (K_IsPlayerStyleBike(player))
+			travelangle += (ANGLE_45/driftdiv)*player->kartstuff[k_drift];
+		else
+			travelangle -= (ANGLE_45/driftdiv)*player->kartstuff[k_drift];
+	}
 
 	for (i = 0; i < 2; i++)
 	{
@@ -3663,13 +3690,26 @@ static void K_GetKartBoostPower(player_t *player)
 		{
 			speedboost = max(speedboost, FRACUNIT/4); // + 25%
 		}
-		accelboost = max(accelboost, 4*FRACUNIT); // + 400%
+		if (K_IsPlayerStyleRocket(player))
+		{
+			accelboost = max(accelboost, 5*FRACUNIT); // + 500%
+		}
+		else
+		{
+			accelboost = max(accelboost, 4*FRACUNIT); // + 400%
+		}
 	}
 
 	if (player->kartstuff[k_startboost]) // Startup Boost
 	{
 		speedboost = max(speedboost, FRACUNIT/4); // + 25%
 		accelboost = max(accelboost, 6*FRACUNIT); // + 300%
+	}
+
+	if (player->kartstuff[k_drift] && K_IsPlayerStyleRocket(player)
+		&& player->kartstuff[k_getsparks])
+	{
+		accelboost = max(accelboost, FRACUNIT); // + 100%
 	}
 
 	// don't average them anymore, this would make a small boost and a high boost less useful
@@ -3735,6 +3775,13 @@ static void K_GetKartStackingBoostPower(player_t *player)
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
+	
+	// doesn't stack
+	if (player->kartstuff[k_drift] && K_IsPlayerStyleRocket(player)
+		&& player->kartstuff[k_getsparks])
+	{
+		accelboost = max(accelboost, FRACUNIT); // + 100%
+	}
 
 	// Banana drag/offroad dust
 	if (boostpower < FRACUNIT
@@ -3796,6 +3843,10 @@ static void K_GetKartStackingBoostPower(player_t *player)
 		if (K_IsPlayerStyleSnake(player))
 		{
 			ADDBOOST(cv_snakedriftspeed.value, cv_snakedriftaccel.value, 0,0); // + 15% 16384, + 400% 262144, 0
+		}
+		else if (K_IsPlayerStyleRocket(player))
+		{
+			ADDBOOST(cv_rocketdriftspeed.value, cv_rocketdriftaccel.value, 0,0); // + 25% 16384, + 500% 262144, 0
 		}
 		else
 		{
@@ -3865,7 +3916,7 @@ static void K_GetKartStackingBoostPower(player_t *player)
 	if (speedboost > player->kartstuff[k_speedboost])
 		player->kartstuff[k_speedboost] = speedboost;
 	// brakemod. slowdown on braking or sliptide (based on version from booststack)
-	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < 5) || (player->cmd.buttons & BT_BRAKE)))
+	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < K_GetKartDriftTurnTime(player)) || (player->cmd.buttons & BT_BRAKE)))
     	player->kartstuff[k_speedboost] = max(speedboost - cv_stackingbrakemod.value, min(player->kartstuff[k_speedboost], 3*FRACUNIT/8));
 	else
 		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
@@ -3937,6 +3988,13 @@ static void K_GetKartStackingOldBoostPower(player_t *player)
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
 		boostpower = (4*boostpower)/5;
+	
+	// doesn't stack
+	if (player->kartstuff[k_drift] && K_IsPlayerStyleRocket(player)
+		&& player->kartstuff[k_getsparks])
+	{
+		accelboost = max(accelboost, FRACUNIT); // + 100%
+	}
 
 	// Banana drag/offroad dust
 	if (boostpower < FRACUNIT
@@ -4003,6 +4061,11 @@ static void K_GetKartStackingOldBoostPower(player_t *player)
 		{
 			driftspeedboost = max(speedboost, cv_snakedriftspeed.value); // + 25% 16384
 			driftaccelboost = max(accelboost, cv_snakedriftaccel.value); // + 400% 262144
+		}
+		else if (K_IsPlayerStyleRocket(player))
+		{
+			driftspeedboost = max(speedboost, cv_rocketdriftspeed.value); // + 25% 16384
+			driftaccelboost = max(accelboost, cv_rocketdriftaccel.value); // + 500% 262144
 		}
 		else
 		{
@@ -4101,7 +4164,7 @@ static void K_GetKartStackingOldBoostPower(player_t *player)
 	if (speedboost > player->kartstuff[k_speedboost])
 		player->kartstuff[k_speedboost] = speedboost;
 	//brakemod. slowdown on braking or sliptide (based on version from booststack)
-	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < 5) || (player->cmd.buttons & BT_BRAKE)))
+	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < K_GetKartDriftTurnTime(player)) || (player->cmd.buttons & BT_BRAKE)))
     	player->kartstuff[k_speedboost] = max(speedboost - cv_stackingbrakemod.value, min(player->kartstuff[k_speedboost], 3*FRACUNIT/8));
 	else
 		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
@@ -4326,6 +4389,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 
 	//player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_rocketdriftroll] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -4462,6 +4526,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_paneltimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_rocketdriftroll] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -4580,6 +4645,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_paneltimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
+	player->kartstuff[k_rocketdriftroll] = 0;
 
 	player->kartstuff[k_drift] = 0;
 	player->kartstuff[k_driftcharge] = 0;
@@ -5021,6 +5087,7 @@ static void K_SpawnDriftSparks(player_t *player)
 	mobj_t *spark;
 	angle_t travelangle;
 	INT32 i;
+	INT32 driftdiv = K_GetKartDriftTurnTime(player);
 
 	I_Assert(player != NULL);
 	I_Assert(player->mo != NULL);
@@ -5035,7 +5102,7 @@ static void K_SpawnDriftSparks(player_t *player)
 	if (!player->kartstuff[k_drift] || player->kartstuff[k_driftcharge] < K_GetKartDriftSparkValue(player))
 		return;
 
-	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+	travelangle = player->mo->angle-(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 
 	for (i = 0; i < 2; i++)
 	{
@@ -5048,11 +5115,11 @@ static void K_SpawnDriftSparks(player_t *player)
 		P_SetTarget(&spark->target, player->mo);
 		if (K_IsPlayerStyleBike(player))
 		{
-			spark->angle = travelangle+(ANGLE_45/5)*player->kartstuff[k_drift];
+			spark->angle = travelangle+(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 		}
 		else
 		{
-			spark->angle = travelangle-(ANGLE_45/5)*player->kartstuff[k_drift];
+			spark->angle = travelangle-(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 		}
 
 		// scale increase while driftspark level gained timer is running
@@ -5128,12 +5195,13 @@ static void K_SpawnDriftSparksBurst(player_t *player)
 	mobj_t *spark;
 	angle_t travelangle;
 	INT32 i;
+	INT32 driftdiv = K_GetKartDriftTurnTime(player);
 
 	I_Assert(player != NULL);
 	I_Assert(player->mo != NULL);
 	I_Assert(!P_MobjWasRemoved(player->mo));
 
-	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+	travelangle = player->mo->angle-(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 
 	for (i = 0; i < 2; i++)
 	{
@@ -5146,11 +5214,11 @@ static void K_SpawnDriftSparksBurst(player_t *player)
 		P_SetTarget(&spark->target, player->mo);
 		if (K_IsPlayerStyleBike(player))
 		{
-			spark->angle = travelangle+(ANGLE_45/5)*player->kartstuff[k_drift];
+			spark->angle = travelangle+(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 		}
 		else
 		{
-			spark->angle = travelangle-(ANGLE_45/5)*player->kartstuff[k_drift];
+			spark->angle = travelangle-(ANGLE_45/driftdiv)*player->kartstuff[k_drift];
 		}
 
 		// hack to find the correct player number
@@ -7683,6 +7751,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->kartstuff[k_startboost])
 		player->kartstuff[k_startboost]--;
 
+	if (player->kartstuff[k_rocketdriftroll] > 0)
+		player->kartstuff[k_rocketdriftroll]--;
+	else if (player->kartstuff[k_rocketdriftroll] < 0)
+		player->kartstuff[k_rocketdriftroll]++;
+
 	if (player->kartstuff[k_invincibilitytimer])
 		player->kartstuff[k_invincibilitytimer]--;
 
@@ -7904,7 +7977,9 @@ boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y)
 // turndir is the direction the controls are telling us to turn, -1 if turning right and 1 if turning left
 static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 {
+	INT32 driftdiv = K_GetKartDriftTurnTime(player);
 	INT16 basedrift, driftangle;
+	INT32 driftratio = driftdiv/5;
 	fixed_t driftweight = player->kartweight*14; // 12
 	if (K_IsPlayerStyleBike(player))
 		driftweight -= player->kartweight*4; //10
@@ -7915,15 +7990,15 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 	if (player->kartstuff[k_drift] == 0 || !P_IsObjectOnGround(player->mo))
 		return 0;
 
-	if (player->kartstuff[k_driftend] != 0)
+	if (player->kartstuff[k_driftend] != 0 && !K_IsPlayerStyleRocket(player))
 	{
-		return -266*player->kartstuff[k_drift]; // Drift has ended and we are tweaking their angle back a bit
+		return -266 * player->kartstuff[k_drift]/driftratio; // Drift has ended and we are tweaking their angle back a bit
 	}
 
 	//basedrift = 90*player->kartstuff[k_drift]; // 450
 	//basedrift = 93*player->kartstuff[k_drift] - driftweight*3*player->kartstuff[k_drift]/10; // 447 - 303
-	basedrift = 83*player->kartstuff[k_drift] - (driftweight - 14)*player->kartstuff[k_drift]/5; // 415 - 303
-	driftangle = abs((252 - driftweight)*player->kartstuff[k_drift]/5);
+	basedrift = 83*player->kartstuff[k_drift]/driftratio - (driftweight - 14)*player->kartstuff[k_drift]/driftdiv; // 415 - 303
+	driftangle = abs((252 - driftweight)*player->kartstuff[k_drift]/driftdiv);
 
 	return basedrift + FixedMul(driftangle, countersteer);
 }
@@ -7978,10 +8053,16 @@ static void K_KartDrift(player_t *player, boolean onground)
 	boolean startsound = false;
 
 	INT32 minsparks = dsone;
+	INT32 driftdiv = K_GetKartDriftTurnTime(player);
+	INT32 mindrift = driftdiv;
 
 	if (K_IsPlayerStyleSnake(player))
 	{
 		minsparks = dstwo;
+	}
+	if (K_IsPlayerStyleRocket(player))
+	{
+		mindrift = 1;
 	}
 
 	// Grown players taking yellow spring panels will go below minspeed for one tic,
@@ -7993,98 +8074,157 @@ static void K_KartDrift(player_t *player, boolean onground)
 	// Drifting is actually straffing + automatic turning.
 	// Holding the Jump button will enable drifting.
 
-	// Drift Release (Moved here so you can't "chain" drifts)
-	if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] < dsone
-		&& onground)
+	if (K_IsPlayerStyleRocket(player))
 	{
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
-		&& onground)
-	{
-
-		if (!K_IsPlayerStyleSnake(player))
+		if ((
+			(abs(player->kartstuff[k_drift]) < mindrift)
+			|| (((player->cmd.driftturn) < 0 && player->kartstuff[k_drift] > 0) 
+				|| ((player->cmd.driftturn) > 0 && player->kartstuff[k_drift] < 0) 
+				|| (player->cmd.driftturn) == 0)
+			)
+			&& player->kartstuff[k_driftcharge]
+			&& onground)
 		{
-			if (cv_additivemt.value)
-			{	
-					player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_bluesparktics.value;
-			}
-			else
-			{
-				if (player->kartstuff[k_driftboost] < cv_bluesparktics.value)
-					player->kartstuff[k_driftboost] = cv_bluesparktics.value;
-			}	
-				
-			startsound = true;
+			player->kartstuff[k_driftcharge] -= dsone/24;
+			if (player->kartstuff[k_driftcharge] < 0)
+				player->kartstuff[k_driftcharge] = 0;
 		}
-		
-		//K_SpawnDashDustRelease(player);
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] < dsthree
-		&& onground)
-	{
-		if (K_IsPlayerStyleSnake(player))
+		if (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_jmp] && !player->kartstuff[k_rocketdriftroll]
+			&& onground)
 		{
-			// PRB
-			if (cv_snakeprbenable.value && (player->kartstuff[k_sneakertimer] > 0) && (player->kartstuff[k_sneakertimer] < cv_snakesparktics.value))
+			if (player->kartstuff[k_drift])
 			{
-				player->kartstuff[k_sneakertimer] = cv_snakesparktics.value;
+				if (cv_additivemt.value)
+				{	
+						player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_rocketsparktics.value;
+				}
+				else
+				{
+					if (player->kartstuff[k_driftboost] < cv_rocketsparktics.value)
+						player->kartstuff[k_driftboost] = cv_rocketsparktics.value;
+				}
+				if (player->kartstuff[k_drift] < 0)
+				{
+					player->kartstuff[k_rocketdriftroll] = -15;
+				}
+				else if (player->kartstuff[k_drift] > 0)
+				{
+					player->kartstuff[k_rocketdriftroll] = 15;
+				}
+				player->kartstuff[k_rocketdriftangle] = player->mo->angle;
+				K_SpawnDashDustRelease(player);
 			}
 			else
 			{
 				if (cv_additivemt.value)
 				{	
-						player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_snakesparktics.value;
+						player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_bluesparktics.value;
 				}
 				else
 				{
-					if (player->kartstuff[k_driftboost] < cv_snakesparktics.value)
-						player->kartstuff[k_driftboost] = cv_snakesparktics.value;
+					if (player->kartstuff[k_driftboost] < cv_bluesparktics.value)
+						player->kartstuff[k_driftboost] = cv_bluesparktics.value;
 				}
 			}
+			startsound = true;
+			player->kartstuff[k_driftcharge] -= dsone;
 		}
-		else
+	}
+	else
+	{
+		// Drift Release (Moved here so you can't "chain" drifts)
+		if ((abs(player->kartstuff[k_drift]) != mindrift)
+			// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
+			&& player->kartstuff[k_driftcharge] < dsone
+			&& onground)
 		{
-			if (cv_additivemt.value)
-			{	
-					player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_redsparktics.value;
+			player->kartstuff[k_driftcharge] = 0;
+		}
+		else if ((abs(player->kartstuff[k_drift]) != mindrift)
+			// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
+			&& (player->kartstuff[k_driftcharge] >= dsone && player->kartstuff[k_driftcharge] < dstwo)
+			&& onground)
+		{
+
+			if (!K_IsPlayerStyleSnake(player))
+			{
+				if (cv_additivemt.value)
+				{	
+						player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_bluesparktics.value;
+				}
+				else
+				{
+					if (player->kartstuff[k_driftboost] < cv_bluesparktics.value)
+						player->kartstuff[k_driftboost] = cv_bluesparktics.value;
+				}	
+					
+				startsound = true;
+			}
+			
+			//K_SpawnDashDustRelease(player);
+			player->kartstuff[k_driftcharge] = 0;
+		}
+		else if ((abs(player->kartstuff[k_drift]) != mindrift)
+			// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
+			&& player->kartstuff[k_driftcharge] < dsthree
+			&& onground)
+		{
+			if (K_IsPlayerStyleSnake(player))
+			{
+				// PRB
+				if (cv_snakeprbenable.value && (player->kartstuff[k_sneakertimer] > 0) && (player->kartstuff[k_sneakertimer] < cv_snakesparktics.value))
+				{
+					player->kartstuff[k_sneakertimer] = cv_snakesparktics.value;
+				}
+				else
+				{
+					if (cv_additivemt.value)
+					{	
+							player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_snakesparktics.value;
+					}
+					else
+					{
+						if (player->kartstuff[k_driftboost] < cv_snakesparktics.value)
+							player->kartstuff[k_driftboost] = cv_snakesparktics.value;
+					}
+				}
 			}
 			else
 			{
-				if (player->kartstuff[k_driftboost] < cv_redsparktics.value)
-					player->kartstuff[k_driftboost] = cv_redsparktics.value;
+				if (cv_additivemt.value)
+				{	
+						player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_redsparktics.value;
+				}
+				else
+				{
+					if (player->kartstuff[k_driftboost] < cv_redsparktics.value)
+						player->kartstuff[k_driftboost] = cv_redsparktics.value;
+				}
 			}
+				
+			startsound = true;
+			//K_SpawnDashDustRelease(player);
+			player->kartstuff[k_driftcharge] = 0;
 		}
-			
-		startsound = true;
-		//K_SpawnDashDustRelease(player);
-		player->kartstuff[k_driftcharge] = 0;
-	}
-	else if ((player->kartstuff[k_drift] != -5 && player->kartstuff[k_drift] != 5)
-		// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
-		&& player->kartstuff[k_driftcharge] >= dsthree
-		&& onground)
-	{
-		if (cv_additivemt.value)
-		{	
-				player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_rainbowsparktics.value;
-		}
-		else
+		else if ((abs(player->kartstuff[k_drift]) != mindrift)
+			// || (player->kartstuff[k_drift] >= 1 && player->kartstuff[k_turndir] != 1) || (player->kartstuff[k_drift] <= -1 && player->kartstuff[k_turndir] != -1))
+			&& player->kartstuff[k_driftcharge] >= dsthree
+			&& onground)
 		{
-			if (player->kartstuff[k_driftboost] < cv_rainbowsparktics.value)
-				player->kartstuff[k_driftboost] = cv_rainbowsparktics.value;
+			if (cv_additivemt.value)
+			{	
+					player->kartstuff[k_driftboost] = player->kartstuff[k_driftboost] + cv_rainbowsparktics.value;
+			}
+			else
+			{
+				if (player->kartstuff[k_driftboost] < cv_rainbowsparktics.value)
+					player->kartstuff[k_driftboost] = cv_rainbowsparktics.value;
+			}
+			
+			startsound = true;
+			//K_SpawnDashDustRelease(player);
+			player->kartstuff[k_driftcharge] = 0;
 		}
-		
-		startsound = true;
-		//K_SpawnDashDustRelease(player);
-		player->kartstuff[k_driftcharge] = 0;
 	}
 	
 	if (startsound) // doing this because duplication is silly lel
@@ -8100,50 +8240,112 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	// Drifting: left or right?
-	if ((player->cmd.driftturn > 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
-		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != 1)
+	if (K_IsPlayerStyleRocket(player))
 	{
-		// Starting left drift
-		player->kartstuff[k_drift] = 1;
-		player->kartstuff[k_driftend] = 0;
-		player->kartstuff[k_driftsnake] = 0;
-	}
-	else if ((player->cmd.driftturn < 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
-		&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != -1)
-	{
-		// Starting right drift
-		player->kartstuff[k_drift] = -1;
-		player->kartstuff[k_driftend] = 0;
-		player->kartstuff[k_driftsnake] = 0;
-	}
-	else if (player->kartstuff[k_jmp] == 0) // || player->kartstuff[k_turndir] == 0)
-	{
-		// drift is not being performed so if we're just finishing set driftend and decrement counters
-		if (player->kartstuff[k_drift] > 0)
+		// rocket style drift always hard drifts when turning (drift button is instead used to flip)
+		// kinda like an automatic drift
+		if (((player->cmd.driftturn >= KART_FULLTURN-50 && !player->kartstuff[k_drift]) || (player->cmd.driftturn > 0 && player->kartstuff[k_drift]))
+		&& player->speed > minspeed && player->kartstuff[k_drift] <= 0 && !player->kartstuff[k_rocketdriftroll]) // && player->kartstuff[k_drift] != 1)
 		{
-			player->kartstuff[k_drift]--;
-			player->kartstuff[k_driftend] = 1;
-		}
-		else if (player->kartstuff[k_drift] < 0)
-		{
+			// Starting left drift
 			player->kartstuff[k_drift]++;
-			player->kartstuff[k_driftend] = 1;
-		}
-		else
 			player->kartstuff[k_driftend] = 0;
+			player->kartstuff[k_driftsnake] = 0;
+		}
+		else if (((player->cmd.driftturn <= -KART_FULLTURN+50 && !player->kartstuff[k_drift]) || (player->cmd.driftturn < 0 && player->kartstuff[k_drift]))
+		&& player->speed > minspeed && player->kartstuff[k_drift] >= 0 && !player->kartstuff[k_rocketdriftroll]) // && player->kartstuff[k_drift] != -1)
+		{
+			// Starting right drift
+			player->kartstuff[k_drift]--;
+			player->kartstuff[k_driftend] = 0;
+			player->kartstuff[k_driftsnake] = 0;
+		}
+		else if ((player->cmd.driftturn) == 0 || player->kartstuff[k_rocketdriftroll])
+		{
+			// ease off the drift
+			if (player->kartstuff[k_drift] > 0)
+			{
+				player->kartstuff[k_drift]--;
+				player->kartstuff[k_driftend] = 1;
+			}
+			else if (player->kartstuff[k_drift] < 0)
+			{
+				player->kartstuff[k_drift]++;
+				player->kartstuff[k_driftend] = 1;
+			}
+			else
+				player->kartstuff[k_driftend] = 0;
+		}
 	}
-
+	else
+	{
+		if ((player->cmd.driftturn > 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+			&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != 1)
+		{
+			// Starting left drift
+			player->kartstuff[k_drift] = 1;
+			player->kartstuff[k_driftend] = 0;
+			player->kartstuff[k_driftsnake] = 0;
+		}
+		else if ((player->cmd.driftturn < 0) && player->speed > minspeed && player->kartstuff[k_jmp] == 1
+			&& (player->kartstuff[k_drift] == 0 || player->kartstuff[k_driftend] == 1)) // && player->kartstuff[k_drift] != -1)
+		{
+			// Starting right drift
+			player->kartstuff[k_drift] = -1;
+			player->kartstuff[k_driftend] = 0;
+			player->kartstuff[k_driftsnake] = 0;
+		}
+		else if (player->kartstuff[k_jmp] == 0) // || player->kartstuff[k_turndir] == 0)
+		{
+			// drift is not being performed so if we're just finishing set driftend and decrement counters
+			if (player->kartstuff[k_drift] > 0)
+			{
+				player->kartstuff[k_drift]--;
+				player->kartstuff[k_driftend] = 1;
+			}
+			else if (player->kartstuff[k_drift] < 0)
+			{
+				player->kartstuff[k_drift]++;
+				player->kartstuff[k_driftend] = 1;
+			}
+			else
+				player->kartstuff[k_driftend] = 0;
+		}
+	}
 
 	// Incease/decrease the drift value to continue drifting in that direction
-	if (player->kartstuff[k_spinouttimer] == 0 && player->kartstuff[k_jmp] == 1 && onground && player->kartstuff[k_drift] != 0)
+	if (player->kartstuff[k_spinouttimer] == 0 && (player->kartstuff[k_jmp] == 1 || K_IsPlayerStyleRocket(player))
+		&& onground && player->kartstuff[k_drift] != 0)
 	{
 		fixed_t driftadditive = 0;
 
 		if (player->kartstuff[k_drift] >= 1) // Drifting to the left
 		{
-			player->kartstuff[k_drift]++;
-			if (player->kartstuff[k_drift] > 5)
-				player->kartstuff[k_drift] = 5;
+			if (K_IsPlayerStyleRocket(player))
+			{
+				if (player->cmd.driftturn > 0)
+				{
+					if (driftdiv*player->cmd.driftturn/KART_FULLTURN > player->kartstuff[k_drift])
+					{
+						player->kartstuff[k_drift]++;
+					}
+					else
+					{
+						player->kartstuff[k_drift]--;
+
+						if (player->kartstuff[k_drift] < 0)
+							player->kartstuff[k_drift] = 0;
+					}
+					if (player->kartstuff[k_drift] > driftdiv)
+						player->kartstuff[k_drift] = driftdiv;
+				}
+			}
+			else
+			{
+				player->kartstuff[k_drift]++;
+				if (player->kartstuff[k_drift] > driftdiv)
+					player->kartstuff[k_drift] = driftdiv;
+			}
 
 			if (K_IsPlayerStyleSnake(player))
 			{
@@ -8178,20 +8380,45 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 			else
 			{
-				driftadditive = 24;
+				if (!player->kartstuff[k_rocketdriftroll])
+				{
+					driftadditive = 24;
 
-				if (player->cmd.driftturn > 0) // Inward
-					driftadditive += abs(player->cmd.driftturn)/100;
-				if (player->cmd.driftturn < 0) // Outward
-					driftadditive -= abs(player->cmd.driftturn)/75;
+					if (player->cmd.driftturn > 0) // Inward
+						driftadditive += abs(player->cmd.driftturn)/100;
+					if (player->cmd.driftturn < 0) // Outward
+						driftadditive -= abs(player->cmd.driftturn)/75;
+				}
 			}
 
 		}
 		else if (player->kartstuff[k_drift] <= -1) // Drifting to the right
 		{
-			player->kartstuff[k_drift]--;
-			if (player->kartstuff[k_drift] < -5)
-				player->kartstuff[k_drift] = -5;
+			if (K_IsPlayerStyleRocket(player))
+			{
+				if (player->cmd.driftturn < 0)
+				{
+					if (driftdiv*player->cmd.driftturn/KART_FULLTURN < player->kartstuff[k_drift])
+					{
+						player->kartstuff[k_drift]--;
+					}
+					else
+					{
+						player->kartstuff[k_drift]++;
+
+						if (player->kartstuff[k_drift] > 0)
+							player->kartstuff[k_drift] = 0;
+					}
+					if (player->kartstuff[k_drift] < -driftdiv)
+						player->kartstuff[k_drift] = -driftdiv;
+				}
+			}
+			else
+			{
+				player->kartstuff[k_drift]--;
+				if (player->kartstuff[k_drift] < -driftdiv)
+					player->kartstuff[k_drift] = -driftdiv;
+			}
 
 			if (K_IsPlayerStyleSnake(player))
 			{
@@ -8226,12 +8453,15 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 			else
 			{
-				driftadditive = 24;
+				if (!player->kartstuff[k_rocketdriftroll])
+				{
+					driftadditive = 24;
 
-				if (player->cmd.driftturn < 0) // Inward
-					driftadditive += abs(player->cmd.driftturn)/100;
-				if (player->cmd.driftturn > 0) // Outward
-					driftadditive -= abs(player->cmd.driftturn)/75;
+					if (player->cmd.driftturn < 0) // Inward
+						driftadditive += abs(player->cmd.driftturn)/100;
+					if (player->cmd.driftturn > 0) // Outward
+						driftadditive -= abs(player->cmd.driftturn)/75;
+				}
 			}
 		}
 
@@ -8243,11 +8473,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 		if (player->speed > minspeed*2)
 			player->kartstuff[k_getsparks] = 1;
-		
-		if (K_IsPlayerStyleSnake(player) && player->kartstuff[k_driftcharge] > dstwo)
-		{
-			player->kartstuff[k_driftcharge] = dstwo;
-		}
 
 		// Sound whenever you get a different tier of sparks
 		if ((player->kartstuff[k_driftcharge] < dsone && player->kartstuff[k_driftcharge]+driftadditive >= dsone)
@@ -8275,7 +8500,6 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 		}
 
-
 		// moved this below sounds to help with scaling
 		// This spawns the drift sparks
 		if (player->kartstuff[k_driftcharge] + driftadditive >= minsparks)
@@ -8283,6 +8507,11 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 		player->kartstuff[k_driftcharge] += driftadditive;
 		player->kartstuff[k_driftend] = 0;
+
+		if ((K_IsPlayerStyleSnake(player) || K_IsPlayerStyleRocket(player)) && player->kartstuff[k_driftcharge] > dstwo)
+		{
+			player->kartstuff[k_driftcharge] = dstwo;
+		}
 	}
 
 	{
@@ -12241,7 +12470,9 @@ static void K_drawDriftGauge(void)
 	if (forceshowhud)
 		goto skipcrap; // i will skip the drift early return and you cant stop me!
 
-	if (!stplyr->kartstuff[k_drift])
+	if (K_IsPlayerStyleRocket(stplyr) && !stplyr->kartstuff[k_driftcharge])
+		return;
+	else if (!stplyr->kartstuff[k_drift])
 		return;
 
 skipcrap:

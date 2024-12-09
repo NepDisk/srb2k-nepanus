@@ -1400,6 +1400,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	angle_t rollsum = 0;
 	angle_t pitchnroll = 0;
 	angle_t sliptiderollangle = 0;
+	angle_t rocketrollangle = 0;
 #endif
 	
 	INT32 dist = -1;
@@ -1578,7 +1579,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			rollangle = thing->rollangle;
 		}
 
-		if (rollangle || pitchnroll || (thing->player && thing->player->sliproll))
+		if (rollangle || pitchnroll || (thing->player && (thing->player->sliproll || thing->player->kartstuff[k_rocketdriftroll])))
 		{
 			rollsum = pitchnroll;
 
@@ -1586,8 +1587,11 @@ static void R_ProjectSprite(mobj_t *thing)
 			{
 				sliptiderollangle =
 					cv_sliptideroll.value ? thing->player->sliproll * (thing->player->sliptidemem) : 0;
+				rocketrollangle =
+					R_PlayerRocketRollAngle(thing->player);
 				rollsum += thing->rollangle +
 						   FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), sliptiderollangle);
+				rollsum += FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), rocketrollangle);
 			}
 			else
 				rollsum += thing->rollangle;

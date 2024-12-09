@@ -189,6 +189,7 @@ boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle
 		
 		// Prevent boosted spinout from throwing you left on teleport
 		thing->player->kartstuff[k_boostangle] = angle;
+		thing->player->kartstuff[k_rocketdriftangle] = angle;
 		
 		if (flash)
 			P_FlashPal(thing->player, PAL_MIXUP, 10);

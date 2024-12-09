@@ -2221,23 +2221,25 @@ static menuitem_t OP_NeptuneMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Red Spark Time", 				&cv_redsparktics, 	 	60},
 	{IT_STRING | IT_CVAR, NULL, "Rainbow Spark Time", 			&cv_rainbowsparktics, 	65},
 	{IT_STRING | IT_CVAR, NULL, "Snaking Spark Time", 			&cv_snakesparktics, 	70},
-	{IT_STRING | IT_CVAR, NULL, "Snaking PRB", 					&cv_snakeprbenable, 	75},
+	{IT_STRING | IT_CVAR, NULL, "Rocket Spark Time", 			&cv_rocketsparktics, 	75},
+	{IT_STRING | IT_CVAR, NULL, "Snaking PRB", 					&cv_snakeprbenable, 	80},
 	
 	//{IT_HEADER, NULL, "Stacking", NULL, 55},
-	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	85},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		90},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		95},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		100},
+	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	90},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		95},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		100},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		105},
 
-	{IT_STRING | IT_CVAR, NULL, "Allow Bike Style", 			&cv_allowbike, 		110},
-	{IT_STRING | IT_CVAR, NULL, "Allow Snaking Style", 			&cv_allowsnake, 		115},
+	{IT_STRING | IT_CVAR, NULL, "Allow Bike Style", 			&cv_allowbike, 		115},
+	{IT_STRING | IT_CVAR, NULL, "Allow Snaking Style", 			&cv_allowsnake, 		120},
+	{IT_STRING | IT_CVAR, NULL, "Allow Rocket Style", 			&cv_allowrocket, 		125},
 	
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap", 					&cv_speedcap, 			95}, .// No longer really needed since it was to fix a bug thats not even in this version :p
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap Value", 				&cv_speedcapval, 		100},
 	
 	//{IT_HEADER, NULL, "Items", NULL, 70},
-	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			125},
-	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			130},
+	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			135},
+	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			140},
 };
 
 static const char* OP_NeptuneTooltips[] =
@@ -2257,6 +2259,7 @@ static const char* OP_NeptuneTooltips[] =
 	"Duration of red mini-turbo.",
 	"Duration of rainbow mini-turbo.",
 	"Duration of mini-turbo when using Snaking style drift.",
+	"Duration of mini-turbo when using Rocket Racing style drift.",
 	"Allow Prolonged Rocket Boost when using Snaking style drift.",
 	//NULL,
 	"Allow boosts to stack together.",
@@ -2266,6 +2269,7 @@ static const char* OP_NeptuneTooltips[] =
 
 	"Allow Bike style drift.",
 	"Allow Snaking style drift.",
+	"Allow Rocket Racing style drift.",
 	
 	//"Should Maximum speed be capped?",
 	//"Value of Maximum speed cap.",
@@ -2289,11 +2293,13 @@ enum
 	pm_rst,
 	pm_rbowst,
 	pm_dsst,
+	pm_rrst,
 	pm_prb,
 	pm_stcks,
 	pm_stcksdim,
 	pm_bikeok,
 	pm_snakeok,
+	pm_rocketok,
 	pm_itemodds,
 	pm_customitemtable,
 };

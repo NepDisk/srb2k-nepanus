@@ -1372,18 +1372,22 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		p.spriteyscale = FIXED_TO_FLOAT(spr->mobj->spriteyscale);
 		
 		angle_t sliptideroll = 0;
+		angle_t rocketroll = 0;
 
 		if (spr->mobj->player)
+		{
 			sliptideroll = ((cv_sloperoll.value && cv_sliptideroll.value) ? spr->mobj->player->sliproll : 0);
+			rocketroll = R_PlayerRocketRollAngle(spr->mobj->player);
+		}
 
-		if ((spr->mobj->rollangle)||(sliptideroll && cv_sliptideroll.value))
+		if ((spr->mobj->rollangle)||(sliptideroll && cv_sliptideroll.value)||rocketroll)
 		{
 			angle_t rollang = 0;
 			rollfactor = ((spr->mobj->rollmodel == true) ? 1 : 0);
 
 			rollang = (spr->mobj->player && sliptideroll && cv_sliptideroll.value)
-            ? (spr->mobj->rollangle * rollfactor) + (sliptideroll * spr->mobj->player->sliptidemem)
-            : (spr->mobj->rollangle * rollfactor);
+            ? (spr->mobj->rollangle * rollfactor) + (sliptideroll * spr->mobj->player->sliptidemem) + rocketroll
+            : (spr->mobj->rollangle * rollfactor) + rocketroll;
 			
 			fixed_t anglef = AngleFixed(rollang);
 			p.rollangle = FIXED_TO_FLOAT(anglef);

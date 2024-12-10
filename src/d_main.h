@@ -47,6 +47,7 @@ extern boolean kartzspeedo; //kartZ speedo
 extern boolean statdp; //stat display for extended player setup
 
 extern boolean bikefpview; // Bike first person view
+extern boolean cssvehiclestyle; // Vehicle style CSS icons
 
 void D_AddAutoloadFiles(void);
 

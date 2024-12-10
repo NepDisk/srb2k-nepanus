@@ -1228,6 +1228,7 @@ boolean kartzspeedo; // kartZ speedometer
 boolean statdp; // New stat
 
 boolean bikefpview; // Bike first person view
+boolean cssvehiclestyle; // Vehicle style CSS icons
 
 static void IdentifyVersion(void)
 {
@@ -1675,6 +1676,10 @@ void D_SRB2Main(void)
 			if (W_CheckMultipleLumps("VIEWF0", "VIEWG0I0", "VIEWH0J0", NULL))
 			{
 				bikefpview = true;
+			}
+			if (W_CheckMultipleLumps("CSSKRTIC", "CSSBIKIC", "CSSSNKIC", "CSSRKTIC", NULL))
+			{
+				cssvehiclestyle = true;
 			}
 		}
 	}

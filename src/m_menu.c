@@ -11541,6 +11541,40 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			//Z_Free(colormap);
 		}
 	}
+
+	// draw vehicle style icons
+	// drawn right to left
+	if (cssvehiclestyle)
+	{
+		patch_t *body;
+		INT32 x = mx + 36 + (charw/2) - 14;
+		INT32 y = my + 65;
+		UINT8 *colour = R_GetTranslationColormap(skintodisplay, setupm_fakecolor, GTC_MENUCACHE);
+
+		// draw each of the more specific styles if used
+		if (skins[skintodisplay].flags & SF_SNAKE)
+		{
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, W_CachePatchName("CSSSNKIC", PU_CACHE), colour);
+			x -= 12;
+		}
+		if (skins[skintodisplay].flags & SF_ROCKET)
+		{
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, W_CachePatchName("CSSRKTIC", PU_CACHE), colour);
+			x -= 12;
+		}
+
+		// draw "body type" (kart / bike)
+		if (skins[skintodisplay].flags & SF_BIKE)
+		{
+			body = W_CachePatchName("CSSBIKIC", PU_CACHE);
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, body, colour);
+		}
+		else
+		{
+			body = W_CachePatchName("CSSKRTIC", PU_CACHE);
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, body, colour);
+		}
+	}
 #undef charw
 }
 

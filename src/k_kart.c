@@ -1535,7 +1535,7 @@ boolean K_IsPlayerStyleRocket(player_t *player)
 /// @brief Time it takes for the player to reach their maximum turning arc when drifting
 /// @param player 
 /// @return Time in tics
-INT32 K_GetKartDriftTurnTime(player_t *player)
+UINT32 K_GetKartDriftTurnTime(player_t *player)
 {
 	if (K_IsPlayerStyleRocket(player))
 		return 20;
@@ -13230,7 +13230,7 @@ static void K_drawKartFirstPerson(void)
 			if (stplyr->mo->momz > 0) // TO-DO: Draw more of the kart so we can remove this if!
 				yoffs += stplyr->mo->momz/3;
 			
-			if (bikefpview && K_IsPlayerStyleBike(stplyr) && stplyr->kartstuff[k_drift])
+			if (bikefpview && K_IsPlayerStyleBike(stplyr))
 				xoffs *= -1;
 
 			if (encoremode)

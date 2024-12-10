@@ -1535,7 +1535,7 @@ boolean K_IsPlayerStyleRocket(player_t *player)
 /// @brief Time it takes for the player to reach their maximum turning arc when drifting
 /// @param player 
 /// @return Time in tics
-UINT32 K_GetKartDriftTurnTime(player_t *player)
+INT32 K_GetKartDriftTurnTime(player_t *player)
 {
 	if (K_IsPlayerStyleRocket(player))
 		return 20;

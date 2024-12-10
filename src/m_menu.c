@@ -2220,22 +2220,26 @@ static menuitem_t OP_NeptuneMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Blue Spark Time", 				&cv_bluesparktics, 	 	55},
 	{IT_STRING | IT_CVAR, NULL, "Red Spark Time", 				&cv_redsparktics, 	 	60},
 	{IT_STRING | IT_CVAR, NULL, "Rainbow Spark Time", 			&cv_rainbowsparktics, 	65},
+	{IT_STRING | IT_CVAR, NULL, "Snaking Spark Time", 			&cv_snakesparktics, 	70},
+	{IT_STRING | IT_CVAR, NULL, "Rocket Spark Time", 			&cv_rocketsparktics, 	75},
+	{IT_STRING | IT_CVAR, NULL, "Snaking PRB", 					&cv_snakeprbenable, 	80},
 	
 	//{IT_HEADER, NULL, "Stacking", NULL, 55},
-	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	75},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		80},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		85},
-	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		90},
+	{IT_STRING | IT_CVAR, NULL, "Stacking", 					&cv_stacking, 		 	90},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Diminish", 			&cv_stackingdim, 		95},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Lowspeed Buff", 		&cv_stackinglowspeedbuff, 		100},
+	{IT_STRING | IT_CVAR, NULL, "Stacking Old Compat", 			&cv_stackingoldcompat, 		105},
+
+	{IT_STRING | IT_CVAR, NULL, "Allow Bike Style", 			&cv_allowbike, 		115},
+	{IT_STRING | IT_CVAR, NULL, "Allow Snaking Style", 			&cv_allowsnake, 		120},
+	{IT_STRING | IT_CVAR, NULL, "Allow Rocket Style", 			&cv_allowrocket, 		125},
 	
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap", 					&cv_speedcap, 			95}, .// No longer really needed since it was to fix a bug thats not even in this version :p
 	//{IT_STRING | IT_CVAR, NULL, "Speedcap Value", 				&cv_speedcapval, 		100},
 	
 	//{IT_HEADER, NULL, "Items", NULL, 70},
-	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			100},
-	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			105},
-	
-
-
+	{IT_STRING | IT_CVAR, NULL, "Item Odds System", 			&cv_itemodds, 			135},
+	{IT_STRING | IT_CVAR, NULL, "Custom Itemtable", 			&cv_customodds, 			140},
 };
 
 static const char* OP_NeptuneTooltips[] =
@@ -2254,11 +2258,18 @@ static const char* OP_NeptuneTooltips[] =
 	"Duration of blue mini-turbo.",
 	"Duration of red mini-turbo.",
 	"Duration of rainbow mini-turbo.",
+	"Duration of mini-turbo when using Snaking style drift.",
+	"Duration of mini-turbo when using Rocket Racing style drift.",
+	"Allow Prolonged Rocket Boost when using Snaking style drift.",
 	//NULL,
 	"Allow boosts to stack together.",
 	"Diminish boost strength the more things are stacked on each other.",
 	"Apply a bonus top speed to lower speeds only while boosting.",
 	"Due to oversights the stacking code wasn't accurate in earlier versions.\nThis recreates those behaviours.\nA stacking_growmult value of 0.4 should be used for accuracy",
+
+	"Allow Bike style drift.",
+	"Allow Snaking style drift.",
+	"Allow Rocket Racing style drift.",
 	
 	//"Should Maximum speed be capped?",
 	//"Value of Maximum speed cap.",
@@ -2281,8 +2292,14 @@ enum
 	pm_bst,
 	pm_rst,
 	pm_rbowst,
+	pm_dsst,
+	pm_rrst,
+	pm_prb,
 	pm_stcks,
 	pm_stcksdim,
+	pm_bikeok,
+	pm_snakeok,
+	pm_rocketok,
 	pm_itemodds,
 	pm_customitemtable,
 };
@@ -11522,6 +11539,40 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			UINT8 *colormap = R_GetTranslationColormap(-1, K_GetEffectiveFollowerColor(color, &fl, setupm_fakecolor, &skins[skintodisplay]), 0);
 			V_DrawFixedPatch((mx+55)*FRACUNIT, ((my+131-clampedheight))*FRACUNIT+sine, fl.scale, flags, patch, colormap);
 			//Z_Free(colormap);
+		}
+	}
+
+	// draw vehicle style icons
+	// drawn right to left
+	if (cssvehiclestyle)
+	{
+		patch_t *body;
+		INT32 x = mx + 36 + (charw/2) - 14;
+		INT32 y = my + 65;
+		UINT8 *colour = R_GetTranslationColormap(skintodisplay, setupm_fakecolor, GTC_MENUCACHE);
+
+		// draw each of the more specific styles if used
+		if (skins[skintodisplay].flags & SF_SNAKE)
+		{
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, W_CachePatchName("CSSSNKIC", PU_CACHE), colour);
+			x -= 12;
+		}
+		if (skins[skintodisplay].flags & SF_ROCKET)
+		{
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, W_CachePatchName("CSSRKTIC", PU_CACHE), colour);
+			x -= 12;
+		}
+
+		// draw "body type" (kart / bike)
+		if (skins[skintodisplay].flags & SF_BIKE)
+		{
+			body = W_CachePatchName("CSSBIKIC", PU_CACHE);
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, body, colour);
+		}
+		else
+		{
+			body = W_CachePatchName("CSSKRTIC", PU_CACHE);
+			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, 0, body, colour);
 		}
 	}
 #undef charw

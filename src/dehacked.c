@@ -8068,8 +8068,11 @@ static const char *const KARTSTUFF_LIST[] = {
 	"REALPANELTIMER",
 	"PANELSTACK",
 	"CHAINSOUND",
-	"DRIFTLOCK"
-	
+	"DRIFTLOCK",
+
+	"DRIFTSNAKE",
+	"ROCKETDRIFTROLL",
+	"ROCKETDRIFTANGLE",
 };
 
 static const char *const HUDITEMS_LIST[] = {
@@ -8292,6 +8295,9 @@ struct {
 
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
+	{"SF_BIKE",SF_BIKE},
+	{"SF_SNAKE",SF_SNAKE},
+	{"SF_ROCKET",SF_ROCKET},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},

@@ -644,6 +644,7 @@ int mobj_rollsum_getter(lua_State *L)
 	if (mo->player)
 	{
 		rollsum += R_PlayerSliptideAngle(mo->player);
+        rollsum += R_PlayerRocketRollAngle(mo->player);
 	}
 
 	lua_pushangle(L, rollsum);

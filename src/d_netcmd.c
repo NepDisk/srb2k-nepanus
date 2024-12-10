@@ -414,11 +414,16 @@ consvar_t cv_chainoffroad = {"chainoffroad", "Both", CV_NETVAR|CV_CHEAT, chainof
 // Additiveminiturbos
 consvar_t cv_additivemt  = 	{"additivemt", 	"Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+
 // Mini-turbo adjustment cvars
 static CV_PossibleValue_t sparktics_cons_t[] = {{1, "MIN"}, {INT32_MAX, "MAX"}, {0, NULL}};
 consvar_t cv_bluesparktics = {"bluesparktics", "20", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_redsparktics = {"redsparktics", "50", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_rainbowsparktics = {"rainbowsparktics", "125", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_snakesparktics = {"snakesparktics", "35", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketsparktics = {"rocketsparktics", "35", CV_NETVAR|CV_CHEAT, sparktics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+// Snaking style Prolonged Rocket Boost
+consvar_t cv_snakeprbenable  = 	{"snakeprbenable", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Stacking
 consvar_t cv_stacking = {"stacking", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -451,6 +456,10 @@ consvar_t cv_growmult = {"stacking_growmult", "-0.3", CV_NETVAR|CV_FLOAT|CV_CHEA
 
 consvar_t cv_driftspeed = {"stacking_drfitspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_driftaccel = {"stacking_drfitaccel", "4.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_snakedriftspeed = {"stacking_snakedrfitspeed", "0.1666", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_snakedriftaccel = {"stacking_snakedrfitaccel", "4.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketdriftspeed = {"stacking_rocketdrfitspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_rocketdriftaccel = {"stacking_rocketdrfitaccel", "6.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_startspeed = {"stacking_startspeed", "0.25", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_startaccel = {"stacking_startaccel", "6.0", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -460,6 +469,11 @@ consvar_t cv_hyuudoroaccel = {"stacking_hyuudoroaccel", "0.5", CV_NETVAR|CV_FLOA
 
 consvar_t cv_speedcap = {"stacking_speedcap", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_speedcapval = {"stacking_speedcapval", "128", CV_NETVAR|CV_FLOAT|CV_CHEAT, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t allowstyle_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
+consvar_t cv_allowbike = {"allowbike", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_allowsnake = {"allowsnake", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_allowrocket = {"allowrocket", "On", CV_NETVAR|CV_CHEAT, allowstyle_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Fuckal Odds`
 static CV_PossibleValue_t itemoddstype_cons_t[] = {{1, "Uranus"}, {2, "CEP"}, {0, NULL}};

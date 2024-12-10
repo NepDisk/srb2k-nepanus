@@ -4814,6 +4814,7 @@ void HWR_ProjectSprite(mobj_t *thing)
 	INT32 rollangle = 0;
 	angle_t rollsum = 0;
 	angle_t sliptiderollangle = 0;
+	angle_t rocketrollangle = 0;
 #endif
 
 	// uncapped/interpolation
@@ -4963,12 +4964,16 @@ void HWR_ProjectSprite(mobj_t *thing)
 			+ FixedMul(FINESINE((camang) >> ANGLETOFINESHIFT), interp.slopepitch)
 			+ thing->rollangle;
 
-		if ((rollangle)||(thing->player && thing->player->sliproll))
+		if ((rollangle)||(thing->player && (thing->player->sliproll || thing->player->kartstuff[k_rocketdriftroll])))
 		{
 			if (thing->player)
 			{
 				sliptiderollangle = cv_sliptideroll.value ? thing->player->sliproll*(thing->player->sliptidemem) : 0;
-				rollsum = rollangle+FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), sliptiderollangle);
+				rocketrollangle =
+					R_PlayerRocketRollAngle(thing->player);
+				rollsum += rollangle +
+						   FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), sliptiderollangle);
+				rollsum += FixedMul(FINECOSINE((ang) >> ANGLETOFINESHIFT), rocketrollangle);
 			}
 			else
 				rollsum = rollangle;

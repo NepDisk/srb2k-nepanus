@@ -136,6 +136,9 @@ extern consvar_t cv_additivemt;
 extern consvar_t cv_bluesparktics;
 extern consvar_t cv_redsparktics;
 extern consvar_t cv_rainbowsparktics;
+extern consvar_t cv_snakesparktics;
+extern consvar_t cv_rocketsparktics;
+extern consvar_t cv_snakeprbenable;
 
 //stacking
 extern consvar_t cv_stacking;
@@ -168,6 +171,10 @@ extern consvar_t cv_growmult;
 
 extern consvar_t cv_driftspeed;
 extern consvar_t cv_driftaccel;
+extern consvar_t cv_snakedriftspeed;
+extern consvar_t cv_snakedriftaccel;
+extern consvar_t cv_rocketdriftspeed;
+extern consvar_t cv_rocketdriftaccel;
 
 extern consvar_t cv_startspeed;
 extern consvar_t cv_startaccel;
@@ -177,6 +184,10 @@ extern consvar_t cv_hyuudoroaccel;
 
 extern consvar_t cv_speedcap;
 extern consvar_t cv_speedcapval;
+
+extern consvar_t cv_allowbike;
+extern consvar_t cv_allowsnake;
+extern consvar_t cv_allowrocket;
 
 //ItemOdds
 extern consvar_t cv_itemodds;

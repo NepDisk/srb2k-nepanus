@@ -1939,7 +1939,7 @@ static void P_3dMovement(player_t *player)
 		}
 		else if (player->kartstuff[k_drift] != 0 && player->kartstuff[k_driftlock] == 0) // dont do this when driftlock is engaged ex: on zippers
 		{
-			if (K_IsPlayerStyleBike(player) && (abs(player->kartstuff[k_drift]) >= driftdiv-1))
+			if (K_IsPlayerStyleBike(player) && (abs(player->kartstuff[k_drift]) >= driftdiv-1 || K_IsPlayerStyleRocket(player)))
 			{
 				movepushangle = player->mo->angle + (ANGLE_22h/driftdiv) * player->kartstuff[k_drift];
 				if (player->kartstuff[k_drift] > 0)
@@ -1955,14 +1955,7 @@ static void P_3dMovement(player_t *player)
 			}
 			else
 			{
-				if (K_IsPlayerStyleBike(player))
-				{
-					movepushangle = player->mo->angle - (driftangle/driftdiv) * (driftdiv - abs(player->kartstuff[k_drift]));
-				}
-				else
-				{
-					movepushangle = player->mo->angle - (driftangle/driftdiv) * player->kartstuff[k_drift];
-				}
+				movepushangle = player->mo->angle - (driftangle/driftdiv) * player->kartstuff[k_drift];
 			}
 		}
 		else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle

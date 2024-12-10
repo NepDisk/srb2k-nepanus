@@ -1906,6 +1906,10 @@ static void P_3dMovement(player_t *player)
 
 	INT32 driftdiv = K_GetKartDriftTurnTime(player);
 	INT32 driftangle = ANGLE_45;
+	if (K_IsPlayerStyleRocket(player))
+	{
+		driftangle = ANG30;
+	}
 
 	totalthrust.x = totalthrust.y = 0; // I forget if this is needed
 	totalthrust.z = FRACUNIT*P_MobjFlip(player->mo)/3; // A bit of extra push-back on slopes

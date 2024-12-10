@@ -1535,7 +1535,7 @@ boolean K_IsPlayerStyleRocket(player_t *player)
 INT32 K_GetKartDriftTurnTime(player_t *player)
 {
 	if (K_IsPlayerStyleRocket(player))
-		return 15;
+		return 20;
 	return 5;
 }
 
@@ -3692,7 +3692,7 @@ static void K_GetKartBoostPower(player_t *player)
 		}
 		if (K_IsPlayerStyleRocket(player))
 		{
-			accelboost = max(accelboost, 5*FRACUNIT); // + 500%
+			accelboost = max(accelboost, 6*FRACUNIT); // + 600%
 		}
 		else
 		{
@@ -7990,7 +7990,7 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 	if (player->kartstuff[k_drift] == 0 || !P_IsObjectOnGround(player->mo))
 		return 0;
 
-	if (player->kartstuff[k_driftend] != 0 && !K_IsPlayerStyleRocket(player))
+	if (player->kartstuff[k_driftend] != 0)
 	{
 		return -266 * player->kartstuff[k_drift]/driftratio; // Drift has ended and we are tweaking their angle back a bit
 	}
@@ -8244,18 +8244,18 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		// rocket style drift always hard drifts when turning (drift button is instead used to flip)
 		// kinda like an automatic drift
-		if (((player->cmd.driftturn >= KART_FULLTURN-50 && !player->kartstuff[k_drift]) || (player->cmd.driftturn > 0 && player->kartstuff[k_drift]))
+		if (((player->cmd.driftturn >= KART_FULLTURN-100 && !player->kartstuff[k_drift]) || (player->cmd.driftturn > 0 && player->kartstuff[k_drift]))
 		&& player->speed > minspeed && player->kartstuff[k_drift] <= 0 && !player->kartstuff[k_rocketdriftroll]) // && player->kartstuff[k_drift] != 1)
 		{
-			// Starting left drift
+			// towards left drift
 			player->kartstuff[k_drift]++;
 			player->kartstuff[k_driftend] = 0;
 			player->kartstuff[k_driftsnake] = 0;
 		}
-		else if (((player->cmd.driftturn <= -KART_FULLTURN+50 && !player->kartstuff[k_drift]) || (player->cmd.driftturn < 0 && player->kartstuff[k_drift]))
+		else if (((player->cmd.driftturn <= -KART_FULLTURN+100 && !player->kartstuff[k_drift]) || (player->cmd.driftturn < 0 && player->kartstuff[k_drift]))
 		&& player->speed > minspeed && player->kartstuff[k_drift] >= 0 && !player->kartstuff[k_rocketdriftroll]) // && player->kartstuff[k_drift] != -1)
 		{
-			// Starting right drift
+			// towards right drift
 			player->kartstuff[k_drift]--;
 			player->kartstuff[k_driftend] = 0;
 			player->kartstuff[k_driftsnake] = 0;
@@ -12470,10 +12470,16 @@ static void K_drawDriftGauge(void)
 	if (forceshowhud)
 		goto skipcrap; // i will skip the drift early return and you cant stop me!
 
-	if (K_IsPlayerStyleRocket(stplyr) && !stplyr->kartstuff[k_driftcharge])
-		return;
-	else if (!stplyr->kartstuff[k_drift])
-		return;
+	if (K_IsPlayerStyleRocket(stplyr))
+	{
+		if (!stplyr->kartstuff[k_driftcharge])
+			return;
+	}
+	else
+	{
+		if (!stplyr->kartstuff[k_drift])
+			return;	
+	}
 
 skipcrap:
 
@@ -13111,6 +13117,7 @@ static void K_drawKartFirstPerson(void)
 	fixed_t scale;
 	UINT8 *colmap = NULL;
 	ticcmd_t *cmd = &stplyr->cmd;
+	INT32 driftratio = K_GetKartDriftTurnTime(stplyr)/5;
 
 	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->flags2 & MF2_DONTDRAW))
 		return;
@@ -13173,8 +13180,8 @@ static void K_drawKartFirstPerson(void)
 	if (tn != cmd->driftturn/50)
 		tn -= (tn - (cmd->driftturn/50))/8;
 
-	if (dr != stplyr->kartstuff[k_drift]*16)
-		dr -= (dr - (stplyr->kartstuff[k_drift]*16))/8;
+	if (dr != stplyr->kartstuff[k_drift]*16/driftratio)
+		dr -= (dr - (stplyr->kartstuff[k_drift]*16/driftratio))/8;
 
 	if (splitscreen == 1)
 	{

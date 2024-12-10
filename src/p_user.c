@@ -1939,9 +1939,15 @@ static void P_3dMovement(player_t *player)
 		}
 		else if (player->kartstuff[k_drift] != 0 && player->kartstuff[k_driftlock] == 0) // dont do this when driftlock is engaged ex: on zippers
 		{
+			// rocket style doesn't strafe when in pogo spring state
+			if (player->kartstuff[k_pogospring] && K_IsPlayerStyleRocket(player))
+			{
+				driftangle = ANG1;
+			}
+
 			if (K_IsPlayerStyleBike(player) && (abs(player->kartstuff[k_drift]) >= driftdiv-1 || K_IsPlayerStyleRocket(player)))
 			{
-				movepushangle = player->mo->angle + (ANGLE_22h/driftdiv) * player->kartstuff[k_drift];
+				movepushangle = player->mo->angle + (driftangle/2/driftdiv) * player->kartstuff[k_drift];
 				if (player->kartstuff[k_drift] > 0)
 				{
 					if (player->cmd.driftturn < 0)

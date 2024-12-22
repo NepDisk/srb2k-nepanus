@@ -214,6 +214,8 @@ typedef enum
 	KITEM_GROW,
 	KITEM_SHRINK,
 	KITEM_THUNDERSHIELD,
+	KITEM_BUBBLESHIELD,
+	KITEM_FLAMESHIELD,
 	KITEM_HYUDORO,
 	KITEM_POGOSPRING,
 	KITEM_KITCHENSINK,
@@ -230,6 +232,16 @@ typedef enum
 
 	NUMKARTRESULTS
 } kartitems_t;
+
+typedef enum
+{
+	KSHIELD_NONE = 0,
+	KSHIELD_THUNDER = 1,
+	KSHIELD_BUBBLE = 2,
+	KSHIELD_FLAME = 3,
+	NUMKARTSHIELDS
+} kartshields_t;
+
 
 //{ SRB2kart - kartstuff
 typedef enum
@@ -287,6 +299,7 @@ typedef enum
 	k_itemtype,		// KITEM_ constant for item number
 	k_itemamount,	// Amount of said item
 	k_itemheld,		// Are you holding an item?
+	k_holdready,	// Hold button-style item is ready to activate
 
 	// Some items use timers for their duration or effects
 	//k_thunderanim,			// Duration of Thunder Shield's use animation
@@ -299,6 +312,9 @@ typedef enum
 	k_squishedtimer,		// Squished frame timer
 	k_rocketsneakertimer,	// Rocket Sneaker duration timer
 	k_invincibilitytimer,	// Invincibility timer
+	k_bubblecool,			// Bubble Shield use cooldown
+	k_bubbleblowup,			// Bubble Shield usage blowup
+	k_flamedash,			// Flame Shield dash power
 	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
 	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
 	k_eggmanblame,			// Fake item recieved, who set this fake

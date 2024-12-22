@@ -13513,6 +13513,8 @@ static consvar_t *kartitemcvs[NUMKARTRESULTS-1] = {
 	&cv_grow,
 	&cv_shrink,
 	&cv_thundershield,
+	&cv_bubbleshield,
+	&cv_flameshield,
 	&cv_hyudoro,
 	&cv_pogospring,
 	&cv_kitchensink,

@@ -100,7 +100,7 @@ set(SRB2_WIN_EXE_NAME srb2kartdd CACHE STRING "Executable binary output name for
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_subdirectory(src)
-add_subdirectory(assets)
+#add_subdirectory(assets)
 
 
 ## config.h generation

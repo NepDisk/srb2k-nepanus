@@ -25,7 +25,6 @@
 
 #include "screen.h" // MAXVIDWIDTH, MAXVIDHEIGHT
 
-
 //
 // ClipWallSegment
 // Clips the given range of columns
@@ -257,6 +256,12 @@ typedef struct pslope_s
 	mapthing_t **vertices; // List should be three long for slopes made by vertex things, or one long for slopes using one vertex thing to anchor
 
 	struct pslope_s *next; // Make a linked list of dynamic slopes, for easy reference later
+
+	// Light offsets (see seg_t)
+	SINT8 lightOffset;
+#ifdef HWRENDER
+	INT16 hwLightOffset;
+#endif
 } pslope_t;
 
 typedef enum
@@ -454,7 +459,7 @@ typedef struct subsector_s
 {
 	sector_t *sector;
 	INT16 numlines;
-	UINT16 firstline;
+	UINT32 firstline;
 	struct polyobj_s *polyList; // haleyjd 02/19/06: list of polyobjects
 #if 1//#ifdef FLOORSPLATS
 	void *splats; // floorsplat_t list
@@ -533,6 +538,12 @@ typedef struct seg_s
 	r_lightlist_t *rlights;
 	polyobj_t *polyseg;
 	boolean dontrenderme;
+
+	// Fake contrast calculated on level load
+	SINT8 lightOffset;
+#ifdef HWRENDER
+	INT16 hwLightOffset;
+#endif
 } seg_t;
 
 //

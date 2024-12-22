@@ -126,14 +126,9 @@ extern char  logfilename[1024];
 // we use comprevision and compbranch instead.
 #else
 #define VERSION    2 // Game version
-#define SUBVERSION 15 // more precise version number
-#ifndef USE_FBO_OGL
-#define VERSIONSTRING "Neptune v2.2g "
-#define VERSIONSTRINGW L"Neptune v2.2g"
-#else
-#define VERSIONSTRING "Neptune v2.2g - FBO "
-#define VERSIONSTRINGW L"Neptune v2.2g - FBO"
-#endif
+#define SUBVERSION 18 // more precise version number
+#define VERSIONSTRING "Neptune v2.4.1"
+#define VERSIONSTRINGW L"Neptune v2.4.1"
 // Hey! If you change this, add 1 to the MODVERSION below! Otherwise we can't force updates!
 // And change CMakeLists.txt (not src/, but in root), for CMake users!
 // AND appveyor.yml, for the build bots!
@@ -337,11 +332,13 @@ typedef enum
 	SKINCOLOR_SANDY,
 	SKINCOLOR_BANANA,
 	SKINCOLOR_SUNFLOWER,
+	SKINCOLOR_OLIVINE,
 	SKINCOLOR_PERIDOT,
 	SKINCOLOR_APPLE,
 	SKINCOLOR_SEAFOAM,
 	SKINCOLOR_FOREST,
 	SKINCOLOR_TOPAZ,
+	SKINCOLOR_FROST,
 	SKINCOLOR_WAVE,
 	SKINCOLOR_ICY,
 	SKINCOLOR_PEACOCK,
@@ -376,6 +373,7 @@ typedef enum
 	SKINCOLOR_DUNE,
 	SKINCOLOR_BRASS,
 	SKINCOLOR_CITRINE,
+	SKINCOLOR_LEMON,
 	SKINCOLOR_CASKET,
 	SKINCOLOR_KHAKI,
 	SKINCOLOR_LIGHT,
@@ -580,7 +578,12 @@ void M_StartupLocale(void);
 // M_GetText function that just returns the string.
 #define M_GetText(x) (x)
 #endif
-void *M_Memcpy(void* dest, const void* src, size_t n);
+
+FUNCINLINE static ATTRINLINE void *M_Memcpy(void *dest, const void *src, size_t n)
+{
+	return memcpy(dest, src, n);
+}
+
 char *va(const char *format, ...) FUNCPRINTF;
 char *M_GetToken(const char *inputString);
 char *sizeu1(size_t num);
@@ -633,6 +636,10 @@ INT32 I_GetKey(void);
 #endif
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+
+#ifndef CLAMP
+#define CLAMP(x, min_val, max_val) ((x) < (min_val) ? (min_val) : ((x) > (max_val) ? (max_val) : (x)))
 #endif
 
 #ifndef M_PIl

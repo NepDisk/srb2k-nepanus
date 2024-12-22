@@ -51,6 +51,7 @@ extern fixed_t sprtopscreen;
 extern fixed_t sprbotscreen;
 extern fixed_t windowtop;
 extern fixed_t windowbottom;
+extern INT32 lengthcol;
 
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
 
@@ -67,6 +68,9 @@ void R_AddPrecipitationSprites(void);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 void R_DrawMasked(void);
+
+boolean R_ThingVisible (mobj_t *thing);
+boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist);
 
 // -----------
 // SKINS STUFF

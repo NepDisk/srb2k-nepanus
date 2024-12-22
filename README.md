@@ -19,13 +19,13 @@ A fork of a fork. This hardcodes many features that I personally enjoy using or 
 - CEP Item Odd system(based on conga calc)
 - Customizable itemtable
 - Fixed NetID conflicts
-- 16-angle support for sprites 
+- 16-angle support for sprites
 - 65534 skins limit (everything skin num releated was made UINT16)
 - Title Screen Thinker and HUD Hook
 - Colored sneakertrails
-- Double and triple sneaker icons
+- Multi item icons for most items
 - Hardcoded Namtags and Driftgauge
-- SRB2.2 Resync system
+- SRB2 2.2 Resync system
 - Followers from RR
 - More to come!
 - All added features are toggable via convars
@@ -42,8 +42,8 @@ A fork of a fork. This hardcodes many features that I personally enjoy using or 
 - darkitembox Default value: On
 - stacking Default value:	On
 - stackingdim Default value: On
-- stackingdimval Default value: 1.20
-- stackingbrakemod Default value: 0.05
+- stackingdimval Default value: 1.25
+- stackingbrakemod Default value: 1.25
 - stacking_sneakerstack Default value: 5
 - stacking_sneakerspeedeasy Default value: 0.8317
 - stacking_sneakerspeednormal Default value: 0.5
@@ -52,9 +52,9 @@ A fork of a fork. This hardcodes many features that I personally enjoy using or 
 - stacking_sneakeraccel Default value: 8.0
 - stacking_invincibilitypeed Default value: 0.375
 - stacking_invincibilityaccel Default value: 3.0
-- stacking_growspeed Default value: 0.2
+- stacking_growspeed Default value: 0.3
 - stacking_growaccel Default value: 0.5
-- stacking_growmult Default value: 0
+- stacking_growmult Default value: -0.3
 - stacking_drfitspeed Default value: 0.25
 - stacking_drfitaccel Default value: 4.0
 - stacking_startspeed Default value: 0.25
@@ -95,6 +95,16 @@ A fork of a fork. This hardcodes many features that I personally enjoy using or 
 - stacking_paneltimer Default value: Off
 - stacking_panelsharestack Default value: On
 - stacking_panelstack Default value: 2
+- sneakerstacksound Default value: On
+- hidefollowers Default value: On
+- stacking_boostpowercompat Default value: Off
+
+## Note about stacking_boostpowercompat
+This recreates the inaccurate stacking behaviour from 2.2g and below.
+
+Accleration will stack, grow speedboost will stack with other boosts and boostmult in general works differently.
+
+If you are using this set stacking_growmult to 0.4 to have grow match how it was previously.
 
 ## Item odds customization
 Please use the cfg script located at ServerScripts/itemodds.cfg if you are going to host a server that will use custom odds.

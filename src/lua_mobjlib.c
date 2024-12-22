@@ -150,7 +150,7 @@ static const udata_field_t mobj_fields[] = {
     FIELD(mobj_t, whiteshadow,           udatalib_getter_boolean,    udatalib_setter_boolean),
 	FIELD(mobj_t, mirrored,           udatalib_getter_boolean,    udatalib_setter_boolean),
     FIELD(mobj_t, rollmodel,           udatalib_getter_boolean,    udatalib_setter_boolean),
-    { NULL },
+    { NULL, 0, NULL, NULL },
 };
 #undef FIELD
 

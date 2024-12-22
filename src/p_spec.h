@@ -32,7 +32,7 @@ void P_InitPicAnims(void);
 void P_SetupLevelFlatAnims(void);
 
 // at map load
-void P_SpawnSpecials(INT32 fromnetsave);
+void P_SpawnSpecials(INT32 fromnetsave, boolean reloadinggamestate);
 
 // every tic
 void P_UpdateSpecials(void);
@@ -453,5 +453,7 @@ mobj_t *P_GetPushThing(UINT32 s);
 void P_CalcHeight(player_t *player);
 
 sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
+
+void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius);
 
 #endif

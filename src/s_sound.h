@@ -32,7 +32,6 @@ extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_digmusicvolume;//, cv_midimusicvolume;
 extern consvar_t cv_numChannels;
 
-extern consvar_t surround;
 extern consvar_t cv_audbuffersize;
 //extern consvar_t cv_resetmusic;
 extern consvar_t cv_gamedigimusic;
@@ -69,6 +68,13 @@ extern consvar_t cv_resume;
 extern consvar_t cv_fading;
 extern consvar_t cv_birdmusic;
 
+extern consvar_t cv_keepmusic;
+extern consvar_t cv_skipintromusic;
+//extern consvar_t cv_ignoremusicchanges;
+extern boolean keepmusic;
+extern boolean skipintromus;
+#define MUSICSTARTTIME (starttime + (TICRATE/2))
+
 extern consvar_t precachesound;
 
 typedef enum
@@ -102,7 +108,11 @@ void S_InitSfxChannels(INT32 sfxVolume);
 //
 void S_StopSounds(void);
 void S_ClearSfx(void);
-void S_Start(void);
+
+void S_InitMapMusic(void);
+void S_StartMapMusic(boolean restore);
+
+void S_CheckMap(void);
 
 // Stops music and restarts it from same position. Used for instant applying changes to amiga filters.
 void S_RestartMusic(void);
@@ -218,11 +228,6 @@ UINT32 S_GetMusicPosition(void);
 // Music Playback
 //
 
-enum
-{
-	MUS_SPECIAL = 1,/* powerups--invincibility, grow */
-};
-
 // Start music track, arbitrary, given its name, and set whether looping
 // note: music flags 12 bits for tracknum (gme, other formats with more than one track)
 //       13-15 aren't used yet
@@ -237,9 +242,6 @@ void S_SetRestoreMusicFadeInCvar (consvar_t *cvar);
 #define S_ClearRestoreMusicFadeInCvar() \
 	S_SetRestoreMusicFadeInCvar(0)
 int  S_GetRestoreMusicFadeIn (void);
-
-void S_SetMusicUsage (int type);
-int  S_MusicUsage (void);
 
 // Stops the music.
 void S_StopMusic(void);

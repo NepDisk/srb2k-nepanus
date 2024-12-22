@@ -142,6 +142,8 @@ extern consvar_t cv_stacking;
 extern consvar_t cv_stackingdim;
 extern consvar_t cv_stackingdimval;
 extern consvar_t cv_stackingbrakemod;
+extern consvar_t cv_stackinglowspeedbuff;
+extern consvar_t cv_stackingoldcompat;
 //boosts
 extern consvar_t cv_sneakerstack;
 
@@ -474,6 +476,7 @@ extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartgametypepreference;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_karthitemdialog;
 
 //Less encore votes and less battlevotes
 extern consvar_t cv_lessbattlevotes;
@@ -518,6 +521,7 @@ extern consvar_t cv_minihead;
 extern consvar_t cv_showlapemblem; 
 
 extern consvar_t cv_showviewpointtext;
+extern consvar_t cv_showdownloadprompt;
 extern consvar_t cv_luaimmersion;
 extern consvar_t cv_fakelocalskin;
 extern consvar_t cv_showlocalskinmenus;
@@ -562,11 +566,15 @@ extern consvar_t cv_ps_thinkframe_page;
 extern consvar_t cv_ps_samplesize;
 extern consvar_t cv_ps_descriptor;
 
+extern consvar_t cv_director, cv_kartdebugdirector, cv_showdirectorhud;
+
 extern consvar_t cv_showtrackaddon;
 
 extern consvar_t cv_showspecstuff;
 
 extern consvar_t cv_betainterscreen;
+
+extern consvar_t cv_laglesscam;
 
 typedef enum
 {

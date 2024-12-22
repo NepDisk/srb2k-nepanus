@@ -47,11 +47,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 // May be incorrect for other platforms, but we don't currently have a way to
 // query the scheduler granularity. SDL will do what's needed to make this as
 // low as possible though.
-#if defined(_WIN32)
-#define MIN_SLEEP_DURATION_MS 1.6
-#else
 #define MIN_SLEEP_DURATION_MS 2.1
-#endif
 
 #include <stdio.h>
 #include <time.h>
@@ -115,6 +111,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 
 #if defined (__unix__) || (defined (UNIXCOMMON) && !defined (__APPLE__))
+#include <poll.h>
 #include <errno.h>
 #include <sys/wait.h>
 #define NEWSIGNALHANDLER
@@ -446,6 +443,7 @@ SDL_bool consolevent = SDL_FALSE;
 SDL_bool framebuffer = SDL_FALSE;
 
 UINT8 keyboard_started = false;
+boolean g_in_exiting_signal_handler = false;
 
 static void I_ReportSignal(int num, int coredumped)
 {
@@ -512,6 +510,8 @@ static void I_ReportSignal(int num, int coredumped)
 #ifndef NEWSIGNALHANDLER
 FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 {
+	g_in_exiting_signal_handler = true;
+
 	D_QuitNetGame(); // Fix server freezes
 
 #ifdef HAVE_LIBBACKTRACE
@@ -545,10 +545,9 @@ typedef struct
 
 feild_t tty_con;
 
-// when printing general stuff to stdout stderr (Sys_Printf)
-//   we need to disable the tty console stuff
-// this increments so we can recursively disable
-static INT32 ttycon_hide = 0;
+// lock to prevent clearing partial lines, since not everything
+// printed ends on a newline.
+static boolean ttycon_ateol = true;
 // some key codes that the terminal may be using
 // TTimo NOTE: I'm not sure how relevant this is
 static INT32 tty_erase;
@@ -576,63 +575,31 @@ static inline void tty_FlushIn(void)
 // TTimo NOTE: it seems on some terminals just sending '\b' is not enough
 //   so for now, in any case we send "\b \b" .. yeah well ..
 //   (there may be a way to find out if '\b' alone would work though)
+// Hanicef NOTE: using \b this way is unreliable because of terminal state,
+//   it's better to use \r to reset the cursor to the beginning of the
+//   line and clear from there.
 static void tty_Back(void)
 {
-	char key;
-	ssize_t d;
-	key = '\b';
-	d = write(STDOUT_FILENO, &key, 1);
-	key = ' ';
-	d = write(STDOUT_FILENO, &key, 1);
-	key = '\b';
-	d = write(STDOUT_FILENO, &key, 1);
-	(void)d;
+	write(STDOUT_FILENO, "\r", 1);
+	if (tty_con.cursor>0)
+	{
+		write(STDOUT_FILENO, tty_con.buffer, tty_con.cursor);
+	}
+	write(STDOUT_FILENO, " \b", 2);
 }
 
 static void tty_Clear(void)
 {
 	size_t i;
+	write(STDOUT_FILENO, "\r", 1);
 	if (tty_con.cursor>0)
 	{
 		for (i=0; i<tty_con.cursor; i++)
 		{
-			tty_Back();
+			write(STDOUT_FILENO, " ", 1);
 		}
+		write(STDOUT_FILENO, "\r", 1);
 	}
-
-}
-
-// clear the display of the line currently edited
-// bring cursor back to beginning of line
-static inline void tty_Hide(void)
-{
-	//I_Assert(consolevent);
-	if (ttycon_hide)
-	{
-		ttycon_hide++;
-		return;
-	}
-	tty_Clear();
-	ttycon_hide++;
-}
-
-// show the current line
-// FIXME TTimo need to position the cursor if needed??
-static inline void tty_Show(void)
-{
-	size_t i;
-	ssize_t d;
-	//I_Assert(consolevent);
-	I_Assert(ttycon_hide>0);
-	ttycon_hide--;
-	if (ttycon_hide == 0 && tty_con.cursor)
-	{
-		for (i=0; i<tty_con.cursor; i++)
-		{
-			d = write(STDOUT_FILENO, tty_con.buffer+i, 1);
-		}
-	}
-	(void)d;
 }
 
 // never exit without calling this, or your terminal will be left in a pretty bad state
@@ -699,50 +666,65 @@ void I_GetConsoleEvents(void)
 	// we use this when sending back commands
 	event_t ev = {0,0,0,0};
 	char key = 0;
-	ssize_t d;
+	struct pollfd pfd =
+	{
+		.fd = STDIN_FILENO,
+		.events = POLLIN,
+		.revents = 0,
+	};
 
 	if (!consolevent)
 		return;
 
-	ev.type = ev_console;
-	ev.data1 = 0;
-	if (read(STDIN_FILENO, &key, 1) == -1 || !key)
-		return;
+	for (;;)
+	{
+		if (poll(&pfd, 1, 0) < 1 || !(pfd.revents & POLLIN))
+			return;
 
-	// we have something
-	// backspace?
-	// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
-	if ((key == tty_erase) || (key == 127) || (key == 8))
-	{
-		if (tty_con.cursor > 0)
+		ev.type = ev_console;
+		ev.data1 = 0;
+		if (read(STDIN_FILENO, &key, 1) == -1 || !key)
+			return;
+
+		// we have something
+		// backspace?
+		// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
+		if ((key == tty_erase) || (key == 127) || (key == 8))
 		{
-			tty_con.cursor--;
-			tty_con.buffer[tty_con.cursor] = '\0';
-			tty_Back();
+			if (tty_con.cursor > 0)
+			{
+				tty_con.cursor--;
+				tty_con.buffer[tty_con.cursor] = '\0';
+				tty_Back();
+			}
+			ev.data1 = KEY_BACKSPACE;
 		}
-		ev.data1 = KEY_BACKSPACE;
-	}
-	else if (key < ' ') // check if this is a control char
-	{
-		if (key == '\n')
+		else if (key < ' ') // check if this is a control char
 		{
-			tty_Clear();
-			tty_con.cursor = 0;
-			ev.data1 = KEY_ENTER;
+			if (key == '\n')
+			{
+				tty_Clear();
+				tty_con.cursor = 0;
+				ev.data1 = KEY_ENTER;
+			}
+			else if (key == 0x4) // ^D, aka EOF
+			{
+				// shut down, most unix programs behave this way
+				I_Quit();
+			}
+			else continue;
 		}
-		else return;
+		else if (tty_con.cursor < sizeof(tty_con.buffer))
+		{
+			// push regular character
+			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
+			tty_con.cursor++;
+			// print the current line (this is differential)
+			write(STDOUT_FILENO, &key, 1);
+		}
+		if (ev.data1) D_PostEvent(&ev);
+		//tty_FlushIn();
 	}
-	else if (tty_con.cursor < sizeof (tty_con.buffer))
-	{
-		// push regular character
-		ev.data1 = tty_con.buffer[tty_con.cursor] = key;
-		tty_con.cursor++;
-		// print the current line (this is differential)
-		d = write(STDOUT_FILENO, &key, 1);
-	}
-	if (ev.data1) D_PostEvent(&ev);
-	//tty_FlushIn();
-	(void)d;
 }
 
 #elif defined (_WIN32)
@@ -938,9 +920,16 @@ static void I_RegisterChildSignals(void)
 void I_OutputMsg(const char *fmt, ...)
 {
 	size_t len;
-	char txt[8192];
+	char *txt;
 	va_list  argptr;
 
+	va_start(argptr,fmt);
+	len = vsnprintf(NULL, 0, fmt, argptr);
+	va_end(argptr);
+	if (len == 0)
+		return;
+
+	txt = malloc(len+1);
 	va_start(argptr,fmt);
 	vsprintf(txt, fmt, argptr);
 	va_end(argptr);
@@ -974,7 +963,10 @@ void I_OutputMsg(const char *fmt, ...)
 		DWORD bytesWritten;
 
 		if (co == INVALID_HANDLE_VALUE)
+		{
+			free(txt);
 			return;
+		}
 
 		if (GetFileType(co) == FILE_TYPE_CHAR && GetConsoleMode(co, &bytesWritten))
 		{
@@ -990,11 +982,16 @@ void I_OutputMsg(const char *fmt, ...)
 			if (oldLength > 0)
 			{
 				LPVOID blank = malloc(oldLength);
-				if (!blank) return;
+				if (!blank)
+				{
+					free(txt);
+					return;
+				}
 				memset(blank, ' ', oldLength); // Blank out.
 				oldLines = malloc(oldLength*sizeof(TCHAR));
 				if (!oldLines)
 				{
+					free(txt);
 					free(blank);
 					return;
 				}
@@ -1029,18 +1026,20 @@ void I_OutputMsg(const char *fmt, ...)
 	}
 #else
 #ifdef HAVE_TERMIOS
-	if (consolevent)
+	if (consolevent && ttycon_ateol)
 	{
-		tty_Hide();
+		tty_Clear();
+		ttycon_ateol = false;
 	}
 #endif
 
 	if (!framebuffer)
 		fprintf(stderr, "%s", txt);
 #ifdef HAVE_TERMIOS
-	if (consolevent)
+	if (consolevent && txt[len-1] == '\n')
 	{
-		tty_Show();
+		write(STDOUT_FILENO, tty_con.buffer, tty_con.cursor);
+		ttycon_ateol = true;
 	}
 #endif
 
@@ -1049,6 +1048,7 @@ void I_OutputMsg(const char *fmt, ...)
 		fflush(stderr);
 
 #endif
+	free(txt);
 }
 
 //
@@ -2663,6 +2663,46 @@ const char *I_GetJoyName(INT32 joyindex)
 	return joyname;
 }
 
+void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength, UINT32 duration)
+{
+#if !(SDL_VERSION_ATLEAST(2,0,14))
+	(void)device_id;
+	(void)low_strength;
+	(void)high_strength;
+	(void)duration;
+#else
+	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
+
+	SDL_GameController *controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		return;
+	}
+
+	SDL_GameControllerRumble(controller, low_strength, high_strength, duration);
+#endif
+}
+
+void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
+{
+#if !(SDL_VERSION_ATLEAST(2,0,14))
+	(void)device_id;
+	(void)red;
+	(void)green;
+	(void)blue;
+#else
+	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
+
+	SDL_GameController *controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		return;
+	}
+
+	SDL_GameControllerSetLED(controller, red, green, blue);
+#endif
+}
+
 #ifndef NOMUMBLE
 #ifdef HAVE_MUMBLE
 // Best Mumble positional audio settings:
@@ -3402,13 +3442,13 @@ INT32 I_StartupSystem(void)
 	SDL_version SDLlinked;
 	SDL_VERSION(&SDLcompiled)
 	SDL_GetVersion(&SDLlinked);
-#ifdef HAVE_THREADS
-	I_start_threads();
-	I_AddExitFunc(I_stop_threads);
-#endif
 	I_StartupConsole();
 #ifdef NEWSIGNALHANDLER
 	I_Fork();
+#endif
+#ifdef HAVE_THREADS
+	I_start_threads();
+	I_AddExitFunc(I_stop_threads);
 #endif
 	I_RegisterSignals();
 	I_OutputMsg("Compiled for SDL version: %d.%d.%d\n",

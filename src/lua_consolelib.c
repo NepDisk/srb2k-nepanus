@@ -81,6 +81,9 @@ void Got_Luacmd(UINT8 **cp, INT32 playernum)
 		lua_pushstring(gL, buf);
 	}
 	LUA_Call(gL, (int)argc, 0, 1); // argc is 1-based, so this will cover the player we passed too.
+
+	lua_pop(gL, 1); // Pop LUA_GetErrorMessage (lua_pcall doesn't pop it)
+
 	return;
 
 deny:
@@ -143,7 +146,7 @@ void COM_Lua_f(void)
 	if (netgame && !( flags & COM_LOCAL ))/* don't send local commands */
 	{ // Send the command through the network
 		UINT8 argc;
-		lua_pop(gL, 1); // pop command info table
+		lua_pop(gL, 2); // pop command info table and LUA_GetErrorMessage
 
 		if (flags & COM_ADMIN && !server && !IsPlayerAdmin(playernum)) // flag 1: only server/admin can use this command.
 		{
@@ -182,6 +185,8 @@ void COM_Lua_f(void)
 	for (i = 1; i < COM_Argc(); i++)
 		lua_pushstring(gL, COM_Argv(i));
 	LUA_Call(gL, (int)COM_Argc(), 0, 1); // COM_Argc is 1-based, so this will cover the player we passed too.
+
+	lua_pop(gL, 1); // Pop LUA_GetErrorMessage (lua_pcall doesn't pop it)
 }
 
 // Wrapper for COM_AddCommand
@@ -453,9 +458,11 @@ static int lib_cvRegisterVar(lua_State *L)
 
 	if (!(((cvar->flags & CV_HIDEN)) || (cvar->flags & CV_NOSHOWHELP)) && (cvar->PossibleValue || !(cvar->value == 0 && stricmp(cvar->string, "0"))))
 	{
+		char *temp = NULL;
+
 		if (!category)
 		{
-			char *temp = strdup(wadfiles[numwadfiles - 1]->filename);
+			temp = strdup(wadfiles[numwadfiles - 1]->filename);
 			nameonly(temp);
 
 			category = temp;
@@ -465,6 +472,8 @@ static int lib_cvRegisterVar(lua_State *L)
 			M_SlotCvarIntoModMenu(cvar, category, menu_name);
 		else
 			M_SlotCvarIntoModMenu(cvar, category, cvar->name);
+
+		free (temp);
 	}
 
 	// return cvar userdata

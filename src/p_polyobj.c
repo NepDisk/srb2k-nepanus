@@ -28,6 +28,7 @@
 #include "r_main.h"
 #include "r_state.h"
 #include "r_defs.h"
+#include "qs22j.h"
 
 
 /*
@@ -95,6 +96,8 @@ INT32 numPolyObjects;
 // Polyobject Blockmap -- initialized in P_LoadBlockMap
 polymaplink_t **polyblocklinks;
 
+static size_t *KnownPolySides;
+static size_t KnownPolySidesCount;
 
 //
 // Static Data
@@ -150,6 +153,36 @@ FUNCINLINE static ATTRINLINE void PolyObj_AddThinker(thinker_t *th)
 	th->next = thinkercap.next;
 	th->prev = &thinkercap;
 	thinkercap.next = th;
+}
+
+static void FreeSideLists(void)
+{
+	free(KnownPolySides);
+	KnownPolySides = NULL;
+	KnownPolySidesCount = 0;
+}
+
+//==========================================================================
+//
+// InitSideLists [RH]
+//
+// Group sides by vertex and collect side that are known to belong to a
+// polyobject so that they can be initialized fast.
+//==========================================================================
+static void InitSideLists(void)
+{
+	size_t i;
+	FreeSideLists();
+	KnownPolySides = malloc(numsegs * sizeof(KnownPolySides[0]));
+	for (i = 0; i < numsegs; i++)
+	{
+		if (segs[i].linedef &&
+			(segs[i].linedef->special == POLYOBJ_START_LINE ||
+			segs[i].linedef->special == POLYOBJ_EXPLICIT_LINE))
+		{
+			KnownPolySides[KnownPolySidesCount++] = i;
+		}
+	}
 }
 
 //
@@ -512,11 +545,12 @@ static void Polyobj_findExplicit(polyobj_t *po)
 	size_t numSegItems = 0;
 	size_t numSegItemsAlloc = 0;
 
-	size_t i;
+	size_t i, ii;
 
 	// first loop: save off all segs with polyobject's id number
-	for (i = 0; i < numsegs; ++i)
+	for (ii = 0; ii < KnownPolySidesCount; ii++)
 	{
+		i = KnownPolySides[ii];
 		INT32 polyID, parentID;
 
 		if (segs[i].linedef->special != POLYOBJ_EXPLICIT_LINE)
@@ -547,7 +581,7 @@ static void Polyobj_findExplicit(polyobj_t *po)
 
 	// sort the array if necessary
 	if (numSegItems >= 2)
-		qsort(segitems, numSegItems, sizeof(segitem_t), Polyobj_segCompare);
+		qs22j(segitems, numSegItems, sizeof(segitem_t), Polyobj_segCompare);
 
 	// second loop: put the sorted segs into the polyobject
 	for (i = 0; i < numSegItems; ++i)
@@ -566,7 +600,7 @@ static void Polyobj_findExplicit(polyobj_t *po)
 //
 static void Polyobj_spawnPolyObj(INT32 num, mobj_t *spawnSpot, INT32 id)
 {
-	size_t i;
+	size_t i, ii;
 	polyobj_t *po = &PolyObjects[num];
 
 	// don't spawn a polyobject more than once
@@ -590,8 +624,9 @@ static void Polyobj_spawnPolyObj(INT32 num, mobj_t *spawnSpot, INT32 id)
 	// 1. Search segs for "line start" special with tag matching this
 	//    polyobject's id number. If found, iterate through segs which
 	//    share common vertices and record them into the polyobject.
-	for (i = 0; i < numsegs; ++i)
+	for (ii = 0; ii < KnownPolySidesCount; ii++)
 	{
+		i = KnownPolySides[ii];
 		seg_t *seg = &segs[i];
 		INT32 polyID, parentID;
 
@@ -1415,7 +1450,10 @@ static boolean Polyobj_rotate(polyobj_t *po, angle_t delta, UINT8 turnthings)
 	{
 		// update seg angles (used only by renderer)
 		for (i = 0; i < po->segCount; ++i)
+		{
 			po->segs[i]->angle += delta;
+			P_UpdateSegLightOffset(po->segs[i]);
+		}
 
 		// update polyobject's angle
 		po->angle += delta;
@@ -1514,29 +1552,29 @@ void Polyobj_InitLevel(void)
 	// the mobj_t pointers on a queue for use below.
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+				continue;
+
+		mobj_t *mo = (mobj_t *)th;
+
+		if (mo->info->doomednum == POLYOBJ_SPAWN_DOOMEDNUM ||
+			mo->info->doomednum == POLYOBJ_SPAWNCRUSH_DOOMEDNUM)
 		{
-			mobj_t *mo = (mobj_t *)th;
+			++numPolyObjects;
 
-			if (mo->info->doomednum == POLYOBJ_SPAWN_DOOMEDNUM ||
-				mo->info->doomednum == POLYOBJ_SPAWNCRUSH_DOOMEDNUM)
-			{
-				++numPolyObjects;
+			qitem = malloc(sizeof(mobjqitem_t));
+			memset(qitem, 0, sizeof(mobjqitem_t));
+			qitem->mo = mo;
+			M_QueueInsert(&(qitem->mqitem), &spawnqueue);
+		}
+		else if (mo->info->doomednum == POLYOBJ_ANCHOR_DOOMEDNUM)
+		{
+			++numAnchors;
 
-				qitem = malloc(sizeof(mobjqitem_t));
-				memset(qitem, 0, sizeof(mobjqitem_t));
-				qitem->mo = mo;
-				M_QueueInsert(&(qitem->mqitem), &spawnqueue);
-			}
-			else if (mo->info->doomednum == POLYOBJ_ANCHOR_DOOMEDNUM)
-			{
-				++numAnchors;
-
-				qitem = malloc(sizeof(mobjqitem_t));
-				memset(qitem, 0, sizeof(mobjqitem_t));
-				qitem->mo = mo;
-				M_QueueInsert(&(qitem->mqitem), &anchorqueue);
-			}
+			qitem = malloc(sizeof(mobjqitem_t));
+			memset(qitem, 0, sizeof(mobjqitem_t));
+			qitem->mo = mo;
+			M_QueueInsert(&(qitem->mqitem), &anchorqueue);
 		}
 	}
 
@@ -1550,6 +1588,9 @@ void Polyobj_InitLevel(void)
 		for (i = 0; i < numPolyObjects; ++i)
 			PolyObjects[i].first = PolyObjects[i].next = numPolyObjects;
 
+		// [RH] Make this faster
+		InitSideLists();
+
 		// setup polyobjects
 		for (i = 0; i < numPolyObjects; ++i)
 		{
@@ -1557,6 +1598,9 @@ void Polyobj_InitLevel(void)
 
 			Polyobj_spawnPolyObj(i, qitem->mo, qitem->mo->spawnpoint->angle);
 		}
+
+		// [RH] Don't need the side lists anymore
+		FreeSideLists();
 
 		// move polyobjects to spawn points
 		for (i = 0; i < numAnchors; ++i)
@@ -1570,39 +1614,6 @@ void Polyobj_InitLevel(void)
 		for (i = 0; i < numPolyObjects; ++i)
 			Polyobj_linkToBlockmap(&PolyObjects[i]);
 	}
-
-#if 0
-	// haleyjd 02/22/06: temporary debug
-	printf("DEBUG: numPolyObjects = %d\n", numPolyObjects);
-	for (i = 0; i < numPolyObjects; ++i)
-	{
-		INT32 j;
-		polyobj_t *po = &PolyObjects[i];
-
-		printf("polyobj %d:\n", i);
-		printf("id = %d, first = %d, next = %d\n", po->id, po->first, po->next);
-		printf("segCount = %d, numSegsAlloc = %d\n", po->segCount, po->numSegsAlloc);
-		for (j = 0; j < po->segCount; ++j)
-			printf("\tseg %d: %p\n", j, po->segs[j]);
-		printf("numVertices = %d, numVerticesAlloc = %d\n", po->numVertices, po->numVerticesAlloc);
-		for (j = 0; j < po->numVertices; ++j)
-		{
-			printf("\tvtx %d: (%d, %d) / orig: (%d, %d)\n",
-				j, po->vertices[j]->x>>FRACBITS, po->vertices[j]->y>>FRACBITS,
-				po->origVerts[j].x>>FRACBITS, po->origVerts[j].y>>FRACBITS);
-		}
-		printf("numLines = %d, numLinesAlloc = %d\n", po->numLines, po->numLinesAlloc);
-		for (j = 0; j < po->numLines; ++j)
-			printf("\tline %d: %p\n", j, po->lines[j]);
-		printf("spawnSpot = (%d, %d)\n", po->spawnSpot.x >> FRACBITS, po->spawnSpot.y >> FRACBITS);
-		printf("centerPt = (%d, %d)\n", po->centerPt.x >> FRACBITS, po->centerPt.y >> FRACBITS);
-		printf("attached = %d, linked = %d, validcount = %d, isBad = %d\n",
-			po->attached, po->linked, po->validcount, po->isBad);
-		printf("blockbox: [%d, %d, %d, %d]\n",
-			po->blockbox[BOXLEFT], po->blockbox[BOXRIGHT], po->blockbox[BOXBOTTOM],
-			po->blockbox[BOXTOP]);
-	}
-#endif
 
 	// done with mobj queues
 	M_QueueFree(&spawnqueue);

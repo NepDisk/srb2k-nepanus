@@ -26,32 +26,6 @@
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 state_t *astate;
 
-enum sfxinfo_read {
-	sfxinfor_name = 0,
-	sfxinfor_singular,
-	sfxinfor_priority,
-	sfxinfor_flags, // "pitch"
-	sfxinfor_skinsound
-};
-const char *const sfxinfo_ropt[] = {
-	"name",
-	"singular",
-	"priority",
-	"flags",
-	"skinsound",
-	NULL};
-
-enum sfxinfo_write {
-	sfxinfow_singular = 0,
-	sfxinfow_priority,
-	sfxinfow_flags // "pitch"
-};
-const char *const sfxinfo_wopt[] = {
-	"singular",
-	"priority",
-	"flags",
-	NULL};
-
 boolean actionsoverridden[NUMACTIONS] = {false};
 
 //

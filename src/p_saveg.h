@@ -18,6 +18,9 @@
 #pragma interface
 #endif
 
+// Persistent storage/archiving.
+// These are the load / save game routines.
+
 typedef struct
 {
 	UINT8 skincolor;

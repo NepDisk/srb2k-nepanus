@@ -120,8 +120,6 @@ GLfloat projMatrix[16];
 static GLint   viewport[4];
 
 #ifdef USE_FBO_OGL
-static boolean GLFramebuffer_IsFuncAvailible(void);
-
 GLuint FramebufferObject, FramebufferTexture, RenderbufferObject;
 GLboolean FrameBufferEnabled = GL_FALSE, RenderToFramebuffer = GL_FALSE;
 
@@ -708,6 +706,9 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 
 static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 
+#ifdef USE_FBO_OGL
+static boolean GLFramebuffer_IsFuncAvailible(void);
+#endif
 
 void SetupGLFunc4(void)
 {
@@ -765,6 +766,8 @@ void SetupGLFunc4(void)
 		pglDeleteRenderbuffers = GetGLFunc("glDeleteRenderbuffers");
 		pglRenderbufferStorage = GetGLFunc("glRenderbufferStorage");
 		pglFramebufferRenderbuffer = GetGLFunc("glFramebufferRenderbuffer");
+
+		supportFBO = true;
 	}
 #endif
 }
@@ -776,9 +779,7 @@ static boolean GLFramebuffer_IsFuncAvailible(void)
 	if (majorGL < 3)
 		return false;
 
-	return((isExtAvailable("GL_ARB_framebuffer_no_attachments",gl_extensions)) && 
-	(isExtAvailable("GL_ARB_framebuffer_object",gl_extensions)) && 
-	(isExtAvailable("GL_ARB_framebuffer_sRGB",gl_extensions)));
+	return (isExtAvailable("GL_ARB_framebuffer_no_attachments",gl_extensions) && isExtAvailable("GL_ARB_framebuffer_object",gl_extensions) && isExtAvailable("GL_ARB_framebuffer_sRGB",gl_extensions));
 
 	return false;
 }
@@ -852,7 +853,7 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
 	switch (info)
 	{
 		case HWD_SHADERINFO_LEVELTIME:
-			shader_leveltime = value;
+			shader_leveltime = (((float)(value-1)) + FIXED_TO_FLOAT(rendertimefrac)) / TICRATE;
 			break;
 		default:
 			break;
@@ -1044,37 +1045,9 @@ EXPORT void HWRAPI(DeleteTexture) (GLMipmap_t *pTexInfo)
 }
 
 #ifdef USE_FBO_OGL
-void GLFramebuffer_Generate(void)
+static void GLFramebuffer_GenerateAttachments(void)
 {
-	if (!GLFramebuffer_IsFuncAvailible())
-		return;
-
-	// Generate the framebuffer
-	if (FramebufferObject == 0)
-		pglGenFramebuffers(1, &FramebufferObject);
-
-	if (pglCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-		GLFramebuffer_GenerateAttachments();
-}
-
-void GLFramebuffer_Delete(void)
-{
-	if (!GLFramebuffer_IsFuncAvailible())
-		return;
-
-	// Unbind the framebuffer
-	pglBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	if (FramebufferObject)
-		pglDeleteFramebuffers(1, &FramebufferObject);
-
-	GLFramebuffer_DeleteAttachments();
-	FramebufferObject = 0;
-}
-
-void GLFramebuffer_GenerateAttachments(void)
-{
-	if (!GLFramebuffer_IsFuncAvailible())
+	if (!supportFBO)
 		return;
 
 	// Bind the framebuffer
@@ -1115,11 +1088,12 @@ void GLFramebuffer_GenerateAttachments(void)
 
 void GLFramebuffer_DeleteAttachments(void)
 {
-	if (!GLFramebuffer_IsFuncAvailible())
+	if (!supportFBO)
 		return;
 
 	// Unbind the framebuffer
 	pglBindFramebuffer(GL_FRAMEBUFFER, 0);
+	pglBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	if (FramebufferTexture)
 		pglDeleteTextures(1, &FramebufferTexture);
@@ -1131,9 +1105,43 @@ void GLFramebuffer_DeleteAttachments(void)
 	RenderbufferObject = 0;
 }
 
-void GLFramebuffer_Enable(void)
+static void GLFramebuffer_Generate(void)
 {
-	if (!GLFramebuffer_IsFuncAvailible())
+	if (!supportFBO)
+		return;
+
+	// Generate the framebuffer
+	if (FramebufferObject == 0)
+		pglGenFramebuffers(1, &FramebufferObject);
+
+	if (pglCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		GLFramebuffer_GenerateAttachments();
+}
+
+static void GLFramebuffer_Delete(void)
+{
+	if (!supportFBO)
+		return;
+
+	if (FramebufferObject)
+		pglDeleteFramebuffers(1, &FramebufferObject);
+
+	GLFramebuffer_DeleteAttachments();
+	FramebufferObject = 0;
+}
+
+inline void GLFramebuffer_Unbind(void)
+{
+	if (!supportFBO)
+		return;
+
+	pglBindFramebuffer(GL_FRAMEBUFFER, 0);
+	pglBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+inline void GLFramebuffer_Enable(void)
+{
+	if (!supportFBO)
 		return;
 
 	if (FramebufferObject == 0)
@@ -1147,11 +1155,13 @@ void GLFramebuffer_Enable(void)
 
 void GLFramebuffer_Disable(void)
 {
-	if (!GLFramebuffer_IsFuncAvailible())
+	if (!supportFBO)
 		return;
 
 	pglBindFramebuffer(GL_FRAMEBUFFER, 0);
 	pglBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	GLFramebuffer_Delete();
 }
 #endif
 
@@ -1840,8 +1850,7 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 			UNIFORM_1(shader->uniforms[gluniform_fade_end], (GLfloat)Surface->LightInfo.fade_end, pglUniform1f);
 		}
 
-		UNIFORM_1(shader->uniforms[gluniform_leveltime], ((float)shader_leveltime) / TICRATE, pglUniform1f);
-
+		UNIFORM_1(shader->uniforms[gluniform_leveltime], shader_leveltime, pglUniform1f);
 		UNIFORM_2(shader->uniforms[gluniform_scr_resolution], vid.width, vid.height, pglUniform2f);
 
 		#undef UNIFORM_1
@@ -2344,7 +2353,6 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 #ifdef USE_FBO_OGL
 		case HWD_SET_FRAMEBUFFER:
 			FrameBufferEnabled = Value ? GL_TRUE : GL_FALSE;
-			supportFBO = GLFramebuffer_IsFuncAvailible();
 
 			if (!supportFBO)
 			{
@@ -2976,7 +2984,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 	// https://zdoom.org/wiki/Y-shearing
 	if (shearing)
 	{
-		float dy = FIXED_TO_FLOAT(AIMINGTODY((stransform->viewaiming)) * 2)* ((float)vid.width / vid.height) / ((float)BASEVIDWIDTH / BASEVIDHEIGHT); //screen_width/BASEVIDWIDTH;
+		float dy = stransform->viewaiming * 2;
 		if (stransform->flip || stransform->mirrorflip)
 			dy *= -1.0f;
 		pglTranslatef(0.0f, -dy/BASEVIDHEIGHT, 0.0f);

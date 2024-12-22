@@ -28,6 +28,9 @@
 #include "m_menu.h"
 #include "m_cheat.h"
 #include "p_setup.h" // NiGHTS grading
+
+#include "i_time.h"
+
 #include "k_kart.h" // SRB2kart
 
 //random index
@@ -151,6 +154,8 @@ static patch_t *envelope;
 // current player for overlay drawing
 player_t *stplyr;
 UINT8 stplyrnum;
+
+boolean directortextactive = false;
 
 // SRB2kart
 hudinfo_t hudinfo[NUMHUDITEMS] =
@@ -455,7 +460,9 @@ void ST_Start(void)
 		ST_Stop();
 
 	ST_InitData();
-	st_stopped = false;
+
+	if (!dedicated)
+		st_stopped = false;
 }
 
 //
@@ -656,8 +663,30 @@ static void ST_overlayDrawer(void)
 
 	if (!hu_showscores) // hide the following if TAB is held
 	{
-		// Countdown timer for Race Mode
-		// ...moved to k_kart.c so we can take advantage of the LAPS_Y value
+		if (cv_showdirectorhud.value && !splitscreen && ((demo.playback && !demo.freecam && (!demo.title || !modeattacking)) || !P_IsLocalPlayer(stplyr)) && !K_DirectorIsPlayerAlone())
+		{
+			char directortext[20] = {0};
+
+			snprintf(directortext, 20, "Director: %s", cv_director.value ? "On" : "Off");
+
+			directortextactive = true;
+
+			if ((!demo.playback && directortoggletimer < 13*TICRATE) || (demo.playback && directortoggletimer < 4*TICRATE))
+			{
+				if (renderisnewtic)
+					directortoggletimer++;
+
+				if (directortoggletimer < 4*TICRATE)
+					V_DrawString(1, BASEVIDHEIGHT-8-1, V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANSHALF|V_ALLOWLOWERCASE, directortext);
+				else if (cv_translucenthud.value != 0)
+					V_DrawString(1, BASEVIDHEIGHT-8-1, V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_80TRANS|V_ALLOWLOWERCASE, directortext); // idk if V_80TRANS is good?
+			}
+		}
+		else
+		{
+			directortoggletimer = 0;
+			directortextactive = false;
+		}
 
 		if (cv_showviewpointtext.value)
 		{
@@ -674,7 +703,7 @@ static void ST_overlayDrawer(void)
 					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_SNAPTOBOTTOM|V_HUDTRANS|V_ALLOWLOWERCASE, player_names[stplyr-players]);
 				}
 			}
-			else if (!demo.title)
+			else if (!demo.title && !demo.freecam)
 			{
 				if (!splitscreen)
 				{
@@ -695,18 +724,9 @@ static void ST_overlayDrawer(void)
 				}
 			}
 		}
-
-		// This is where we draw all the fun cheese if you have the chasecam off!
-		/*if ((stplyr == &players[displayplayers[0]] && !camera[0].chase)
-			|| ((splitscreen && stplyr == &players[displayplayers[1]]) && !camera[1].chase)
-			|| ((splitscreen > 1 && stplyr == &players[displayplayers[2]]) && !camera[2].chase)
-			|| ((splitscreen > 2 && stplyr == &players[displayplayers[3]]) && !camera[3].chase))
-		{
-			ST_drawFirstPersonHUD();
-		}*/
 	}
 
-	if (!(netgame || multiplayer) || !hu_showscores)
+	if ((!(netgame || multiplayer) || !hu_showscores) && !forceshowhud)
 	{
 		if (renderisnewtic)
 		{
@@ -715,7 +735,7 @@ static void ST_overlayDrawer(void)
 	}
 
 	// draw level title Tails
-	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer) && !mapreset) && LUA_HudEnabled(hud_stagetitle))
+	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer) && !mapreset) && LUA_HudEnabled(hud_stagetitle) && !forceshowhud)
 		ST_drawLevelTitle();
 
 	if (!hu_showscores && netgame && !mapreset)
@@ -787,25 +807,82 @@ static void ST_overlayDrawer(void)
 	}
 }
 
-void ST_DrawDemoTitleEntry(void)
+static void ST_DrawTextInput(INT32 x, INT32 y, textinput_t *input, INT32 flags)
 {
 	static UINT8 skullAnimCounter = 0;
-	char *nametodraw;
+	static const INT32 MAXINPUTWIDTH = (MAXSTRINGLENGTH-1)*8;
 
-	skullAnimCounter++;
+	if (renderisnewtic)
+		skullAnimCounter++;
 	skullAnimCounter %= 8;
 
-	nametodraw = demo.titlename;
-	while (V_StringWidth(nametodraw, 0) > MAXSTRINGLENGTH*8 - 8)
-		nametodraw++;
+	char nametodraw[MAXSTRINGLENGTH*2+1] = {0};
 
+	size_t drawstart = 0;
+	size_t drawend = 0; // Only used for selection
+
+	INT32 skullx = x;
+
+	while (V_SubStringWidth(input->buffer+drawstart, input->cursor-drawstart, V_ALLOWLOWERCASE) > MAXINPUTWIDTH)
+		++drawstart;
+
+	size_t drawlength = V_SubStringLengthToFit(input->buffer+drawstart, MAXINPUTWIDTH+8, V_ALLOWLOWERCASE)+1;
+	drawend = drawstart + drawlength;
+
+	memcpy(nametodraw, input->buffer+drawstart, drawlength);
+
+	if (input->length)
+		skullx += V_SubStringWidth(nametodraw, input->cursor-drawstart, V_ALLOWLOWERCASE);
+
+	V_DrawString(x, y, V_ALLOWLOWERCASE|flags, nametodraw);
+
+	// draw text cursor for name
+	if (skullAnimCounter < 4) // blink cursor
+		V_DrawCharacter(skullx, y+3, '_'|flags, false);
+
+	// draw selection
+	if (input->select != input->cursor)
+	{
+		size_t start = min(input->select, input->cursor);
+		size_t end =   max(input->select, input->cursor);
+
+		INT32 startx = 0;
+		INT32 width = 0;
+
+		// I couldn't figure out one formula so here's bunch of separate cases
+		if (start < drawstart && end > drawend) // Selection covers whole visible portion of demo name
+		{
+			startx = -2;
+			width = V_StringWidth(nametodraw, V_ALLOWLOWERCASE)+4;
+		}
+		else if (start < drawstart) // Only left side of selection is off visible part
+		{
+			startx = -2;
+			size_t len = (end - start) - (drawstart - start);
+			width = V_SubStringWidth(nametodraw, len, V_ALLOWLOWERCASE)+2;
+		}
+		else if (end > drawend) // Only right side of selection is off visible part
+		{
+			startx = V_SubStringWidth(nametodraw, start-drawstart, V_ALLOWLOWERCASE);
+			width = V_StringWidth(nametodraw+(start-drawstart), V_ALLOWLOWERCASE)+2;
+		}
+		else // All selection is on visible part
+		{
+			startx = V_SubStringWidth(nametodraw, start-drawstart, V_ALLOWLOWERCASE);
+			width = V_SubStringWidth(nametodraw+(start-drawstart), end-start, V_ALLOWLOWERCASE);
+		}
+
+		V_DrawFill(x+startx, y, width, 8, 103|V_TRANSLUCENT|flags);
+	}
+}
+
+void ST_DrawDemoTitleEntry(void)
+{
 #define x (BASEVIDWIDTH/2 - 139)
 #define y (BASEVIDHEIGHT/2)
 	M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, nametodraw);
-	if (skullAnimCounter < 4)
-		V_DrawCharacter(x + 8 + V_StringWidth(nametodraw, 0), y + 12,
-			'_' | 0x80, false);
+
+	ST_DrawTextInput(x + 8, y + 12, &demo.titlenameinput, 0);
 
 	M_DrawTextBox(x + 30, y - 24, 26, 1);
 	V_DrawString(x + 38, y - 16, V_ALLOWLOWERCASE, "Enter the name of the replay.");

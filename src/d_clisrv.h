@@ -98,6 +98,7 @@ typedef enum
 	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
+
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -416,14 +417,13 @@ extern consvar_t
 #ifdef VANILLAJOINNEXTROUND
 	cv_joinnextround,
 #endif
-	cv_netticbuffer, cv_allownewplayer, cv_joinrefusemessage, cv_maxplayers, cv_allowresynch, cv_resynchcooldown, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
+	cv_netticbuffer, cv_allownewplayer, cv_joinrefusemessage, cv_maxplayers, cv_gamestateattempts, cv_resynchcooldown, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
 extern consvar_t cv_connectawaittime;
 
 extern consvar_t cv_discordinvites;
 
 // Used in d_net, the only dependence
-tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
 
 // Initialise the other field
@@ -481,7 +481,7 @@ tic_t GetLag(INT32 node);
 UINT8 GetFreeXCmdSize(void);
 
 extern UINT8 hu_redownloadinggamestate;
-extern UINT8 hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
+extern boolean hu_stopped; // kart, true when the game is stopped for players due to a disconnecting or connecting player
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];

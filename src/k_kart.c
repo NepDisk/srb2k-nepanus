@@ -17,6 +17,7 @@
 #include "m_menu.h" // ffdhidshfuisduifigergho9igj89dgodhfih AAAAAAAAAA
 #include "p_local.h"
 #include "p_mobj.h"
+#include "p_setup.h"
 #include "p_slopes.h"
 #include "r_defs.h"
 #include "r_draw.h"
@@ -33,11 +34,13 @@
 #include "z_zone.h"
 #include "m_misc.h"
 #include "m_cond.h"
+#include "k_director.h"
 #include "k_kart.h"
 #include "f_finale.h"
 #include "lua_hud.h"	// For Lua hud checks
 #include "lua_hook.h"	// For MobjDamage and ShouldDamage
 #include "d_main.h"		// found_extra_kart
+
 
 #include "i_video.h"
 
@@ -76,6 +79,7 @@ IMPL_HUD_OFFSET(stat); // Stats
 //extra hud things
 consvar_t cv_showstats = {"showstats", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showinput = {"showinput", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_showlaptimes = {"showlaptimes", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 CV_PossibleValue_t speedo_cons_t[NUMSPEEDOSTUFF];
 consvar_t cv_newspeedometer = {"newspeedometer", "Default", CV_SAVE, speedo_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -86,7 +90,7 @@ consvar_t cv_saltyhopsfx = {"hardcodehopsfx", "On", CV_SAVE, CV_OnOff, NULL, 0, 
 consvar_t cv_saltysquish = {"hardcodehopsquish", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 //Colourized HUD
-consvar_t cv_colorizedhud = {"colorizedhud", "On", CV_SAVE|CV_CALL, CV_OnOff, Saturn_menu_Onchange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_colorizedhud = {"colorizedhud", "On", CV_SAVE|CV_CALL, CV_OnOff, SaturnHud_menu_Onchange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_colorizeditembox = {"colorizeditembox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t HudColor_cons_t[MAXSKINCOLORS+1];
@@ -250,11 +254,13 @@ const char *KartColor_Names[MAXSKINCOLORS] =
 	"Sandy",          // SKINCOLOR_SANDY
 	"Banana",         // SKINCOLOR_BANANA
 	"Sunflower",      // SKINCOLOR_SUNFLOWER
+	"Olivine",        // SKINCOLOR_OLIVINE
 	"Peridot",        // SKINCOLOR_PERIDOT
 	"Apple",          // SKINCOLOR_APPLE
 	"Seafoam",        // SKINCOLOR_SEAFOAM
 	"Forest",         // SKINCOLOR_FOREST
 	"Topaz",          // SKINCOLOR_TOPAZ
+	"Frost",          // SKINCOLOR_FROST
 	"Wave",           // SKINCOLOR_WAVE
 	"Icy",            // SKINCOLOR_ICY
 	"Peacock",        // SKINCOLOR_PEACOCK
@@ -289,6 +295,7 @@ const char *KartColor_Names[MAXSKINCOLORS] =
 	"Dune",           // SKINCOLOR_DUNE
 	"Brass",          // SKINCOLOR_BRASS
 	"Citrine",        // SKINCOLOR_CITRINE
+	"Lemon",          // SKINCOLOR_LEMON
 	"Casket",         // SKINCOLOR_CASKET
 	"Khaki",          // SKINCOLOR_KHAKI
 	"Light",          // SKINCOLOR_LIGHT
@@ -456,15 +463,17 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_GHOST,8,        // SKINCOLOR_PEACHY
 	SKINCOLOR_WAVE,8,         // SKINCOLOR_QUAIL
 	SKINCOLOR_BLUEBELL,8,     // SKINCOLOR_LANTERN
-	SKINCOLOR_TOPAZ,10,       // SKINCOLOR_APRICOT
+	SKINCOLOR_FROST,10,       // SKINCOLOR_APRICOT
 	SKINCOLOR_PEACOCK,8,      // SKINCOLOR_SANDY
 	SKINCOLOR_ICY,8,          // SKINCOLOR_BANANA
 	SKINCOLOR_MAGENTA,8,      // SKINCOLOR_SUNFLOWER
+	SKINCOLOR_VIOLET,8,       // SKINCOLOR_OLIVINE
 	SKINCOLOR_VIOLET,8,       // SKINCOLOR_PERIDOT
 	SKINCOLOR_GEMSTONE,8,     // SKINCOLOR_APPLE
 	SKINCOLOR_PLUM,10,        // SKINCOLOR_SEAFOAM
 	SKINCOLOR_NEON,8,         // SKINCOLOR_FOREST
 	SKINCOLOR_APRICOT,8,      // SKINCOLOR_TOPAZ
+	SKINCOLOR_APRICOT,8,      // SKINCOLOR_FROST
 	SKINCOLOR_QUAIL,8,        // SKINCOLOR_WAVE
 	SKINCOLOR_BANANA,10,      // SKINCOLOR_ICY
 	SKINCOLOR_SANDY,8,        // SKINCOLOR_PEACOCK
@@ -499,6 +508,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_PEPPERMINT,9,   // SKINCOLOR_DUNE
 	SKINCOLOR_LUNAR,8,        // SKINCOLOR_BRASS
 	SKINCOLOR_BYZANTIUM,8,    // SKINCOLOR_CITRINE
+	SKINCOLOR_ORCA,8,         // SKINCOLOR_LEMON
 	SKINCOLOR_TURQUOISE,8,    // SKINCOLOR_CASKET
 	SKINCOLOR_SNOW,8,         // SKINCOLOR_KHAKI
 	SKINCOLOR_COTTONCANDY,10, // SKINCOLOR_LIGHT
@@ -533,7 +543,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 	SKINCOLOR_BRASS,10,       // SKINCOLOR_LUNAR
 	SKINCOLOR_MUD,6,          // SKINCOLOR_ONYX
 	SKINCOLOR_HOTDOG,8,       // SKINCOLOR_LAPIS
-	SKINCOLOR_CITRINE,10,     // SKINCOLOR_ORCA
+	SKINCOLOR_LEMON,10,       // SKINCOLOR_ORCA
 	SKINCOLOR_PEARL,8,        // SKINCOLOR_STORM
 	SKINCOLOR_AMBER,6,        // SKINCOLOR_MIDNIGHT
 	SKINCOLOR_LIGHT,10,       // SKINCOLOR_COTTONCANDY
@@ -552,7 +562,7 @@ const UINT8 KartColor_Opposite[MAXSKINCOLORS*2] =
 };
 
 UINT8 colortranslations[MAXTRANSLATIONS][16] = {
-	{  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, // SKINCOLOR_NONE
+    {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, // SKINCOLOR_NONE
 	{120, 120, 120, 120,   0,   2,   5,   8,   9,  11,  14,  17,  20,  22,  25,  28}, // SKINCOLOR_WHITE
 	{  0,   1,   2,   3,   5,   7,   9,  12,  13,  15,  18,  20,  23,  25,  27,  30}, // SKINCOLOR_SILVER
 	{  1,   3,   5,   7,   9,  11,  13,  15,  17,  19,  21,  23,  25,  27,  29,  31}, // SKINCOLOR_GREY
@@ -668,11 +678,13 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 	{112, 113, 114, 115, 116,  54,  56,  57,  58,  59,  60, 254, 254, 255, 255, 244}, // SKINCOLOR_SANDY
 	{ 96,  98,  99, 100, 102, 103, 113, 105, 106, 107, 108, 109, 183, 110,  63, 111}, // SKINCOLOR_BANANA
 	{ 97,  98,  99, 112, 113, 105, 106, 107, 107, 108, 170, 171, 172, 173, 174, 175}, // SKINCOLOR_SUNFLOWER
-	{120,  97,  97, 176, 176, 160, 160, 184, 184, 185, 185, 186, 187, 188, 189, 190}, // SKINCOLOR_PERIDOT
+	{120,  97,  97, 176, 176, 160, 160, 184, 184, 185, 185, 186, 187, 188, 189, 190}, // SKINCOLOR_OLIVINE
+	{176, 176, 177, 105 ,105, 106, 106, 107, 107, 108, 182, 182, 183, 183, 173, 191}, // SKINCOLOR_PERIDOT
 	{ 99, 101, 113, 105, 106, 107, 107, 168, 169, 170, 171, 171, 172, 173, 174, 175}, // SKINCOLOR_APPLE
 	{120,  97, 176, 177, 178, 179, 180, 221, 222, 222, 223, 223, 240, 242, 244,  31}, // SKINCOLOR_SEAFOAM
 	{164, 166, 167, 168, 169, 170, 171, 172, 173, 174, 174, 175, 175,  31,  31,  31}, // SKINCOLOR_FOREST
 	{120, 208, 209, 211, 211, 161, 161, 162, 162, 163, 163, 165, 167, 169, 171, 173}, // SKINCOLOR_TOPAZ
+	{120,   0, 208, 247, 247, 211, 213, 220, 216, 217, 221, 222, 223, 173, 174, 175}, // SKINCOLOR_FROST
 	{120, 208, 210, 213, 215, 216, 217, 218, 219, 205, 198, 198, 199, 199, 207, 243}, // SKINCOLOR_WAVE
 	{120, 120, 120, 120, 208, 210, 213, 214, 215, 216, 229, 229, 204, 205, 206, 207}, // SKINCOLOR_ICY
 	{214, 215, 216, 217, 218, 219, 219, 223, 223, 173, 240, 241, 243, 244, 245, 246}, // SKINCOLOR_PEACOCK
@@ -707,6 +719,7 @@ UINT8 colortranslations[MAXTRANSLATIONS][16] = {
 	{120,  96,  80,  81,  82,  70,  72,  75,  79,  91,  93, 152, 154, 156, 158, 140}, // SKINCOLOR_DUNE
 	{ 96,  98, 112, 113, 114, 115, 116, 117, 118,  58,  59,  60,  61,  62,  63,  28}, // SKINCOLOR_BRASS
 	{120,  97,  97, 176, 176, 176, 105, 105, 105, 106, 106, 107, 107, 108, 108, 182}, // SKINCOLOR_CITRINE
+	{120, 120,  96,  96,  97,  98,  99, 100, 101, 113, 105, 106, 107, 108, 109, 110}, // SKINCOLOR_LEMON
 	{104, 105, 106, 107, 107, 108, 108, 182, 109, 183, 110,  63, 191, 111,  30,  31}, // SKINCOLOR_CASKET
 	{ 65,  68,  70,  73,  32,  34,  36,  38, 108, 108, 182, 109, 183, 110, 174,  31}, // SKINCOLOR_KHAKI
 	{120,  96,  97,  98,  99, 100, 176, 177, 178, 179,  15,  18,  21,  24,  27,  29}, // SKINCOLOR_LIGHT
@@ -941,10 +954,8 @@ UINT8 K_GetKartColorByName(const char *name)
 
 UINT8 K_GetHudColor(void)
 {
-	if (cv_colorizedhud.value){
-		if (cv_colorizedhudcolor.value) return cv_colorizedhudcolor.value;
-	}
-	if (stplyr && P_IsLocalPlayer(stplyr) && gamestate == GS_LEVEL) return stplyr->skincolor;
+	if (cv_colorizedhud.value && cv_colorizedhudcolor.value) return cv_colorizedhudcolor.value;
+
 	return ((stplyr && gamestate == GS_LEVEL) ? stplyr->skincolor : cv_playercolor.value);
 }
 
@@ -1338,6 +1349,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartgametypepreference);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
+	CV_RegisterVar(&cv_karthitemdialog);
 	CV_RegisterVar(&cv_karteliminatelast);
 	CV_RegisterVar(&cv_votetime);
 
@@ -1380,6 +1392,7 @@ void K_RegisterKartStuff(void)
 
 	CV_RegisterVar(&cv_showstats);
 	CV_RegisterVar(&cv_showinput);
+	CV_RegisterVar(&cv_showlaptimes);
 	CV_RegisterVar(&cv_newspeedometer);
 	
 	CV_RegisterVar(&cv_battlespeedo);
@@ -1439,6 +1452,12 @@ void K_RegisterKartStuff(void)
 	
 	// Chainsound
 	CV_RegisterVar(&cv_chainsound);
+	
+	// Low Speed buff
+	CV_RegisterVar(&cv_stackinglowspeedbuff);
+	
+	// Revert Cvars
+	CV_RegisterVar(&cv_stackingoldcompat);
 }
 
 //}
@@ -3437,6 +3456,31 @@ static void K_RegularVoiceTimers(player_t *player)
 		player->kartstuff[k_tauntvoices] = 4*TICRATE;
 }
 
+static void K_PlayGenericCombatSound(mobj_t *source, mobj_t *other, sfxenum_t sfx_id)
+{
+	skin_t *skin = NULL;
+
+	// I HATE LOCALSKINS! I HATE LOCALSKINS! :AAAAAAAAAA:
+	if (source->player)
+	{
+		INT32 skinnum = source->player->skinlocal ? (source->player->localskin - 1) : source->player->skin;
+		skin = &(source->player->skinlocal ? localskins : skins)[skinnum];
+	}
+
+	if (!skin)
+		return;
+
+	boolean alwaysHear = false;
+
+	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
+		alwaysHear = P_IsDisplayPlayer(other->player);
+
+	if (cv_kartvoices.value)
+		S_StartSound(alwaysHear ? NULL : source, skin->soundsid[S_sfx[sfx_id].skinsound]);
+
+	K_RegularVoiceTimers(source->player);
+}
+
 void K_PlayAttackTaunt(mobj_t *source)
 {
 	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
@@ -3485,7 +3529,24 @@ void K_PlayOvertakeSound(mobj_t *source)
 	K_RegularVoiceTimers(source->player);
 }
 
-void K_PlayHitEmSound(mobj_t *source)
+static boolean K_SetDelayedHitEm(player_t *player, player_t *victim)
+{
+	player_t *prevvictim = NULL;
+
+	if (player->hitemtimer)
+		prevvictim = &players[player->hitemvictim];
+
+	// We prioritize local players to hear "hit em" sfx
+	if (prevvictim && P_IsDisplayPlayer(prevvictim) && !P_IsDisplayPlayer(victim))
+		return false;
+
+	player->hitemtimer = TICRATE/2;
+	player->hitemvictim = victim - players;
+
+	return true;
+}
+
+void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
 {
 	if (source->player->follower)
 	{
@@ -3494,7 +3555,14 @@ void K_PlayHitEmSound(mobj_t *source)
 	}
 
 	if (cv_kartvoices.value)
+	{
+		if (cv_karthitemdialog.value
+			&& source->player && victim && victim->player
+			&& K_SetDelayedHitEm(source->player, victim->player))
+			return; // Don't call K_RegularVoiceTimers yet, we didn't do any sound
+
 		S_StartSound(source, sfx_khitem);
+	}
 	else
 		S_StartSound(source, sfx_s1c9); // The only lost gameplay functionality with voices disabled
 
@@ -3507,6 +3575,33 @@ void K_PlayPowerGloatSound(mobj_t *source)
 		S_StartSound(source, sfx_kgloat);
 
 	K_RegularVoiceTimers(source->player);
+}
+
+static void K_HandleDelayedHitByEm(player_t *player)
+{
+	if (player->hitemtimer == 0)
+	{
+		return;
+	}
+
+	player->hitemtimer--;
+
+	if (player->hitemtimer == 0)
+	{
+		mobj_t *victim = NULL;
+
+		if (player->hitemvictim < MAXPLAYERS && playeringame[player->hitemvictim])
+		{
+			player_t *victimPlayer = &players[player->hitemvictim];
+
+			if (victimPlayer != NULL && victimPlayer->spectator == false)
+			{
+				victim = victimPlayer->mo;
+			}
+		}
+
+		K_PlayGenericCombatSound(player->mo, victim, sfx_khitem);
+	}
 }
 
 void K_MomentumToFacing(player_t *player)
@@ -3527,11 +3622,13 @@ void K_MomentumToFacing(player_t *player)
 	player->mo->momy = FixedMul(player->mo->momy - player->cmomy, player->mo->friction) + player->cmomy;
 }
 
-
-//Rescale oh boy based on old version of blib
-static fixed_t K_BoostRescale(fixed_t value,fixed_t oldmin,fixed_t oldmax,fixed_t newmin,fixed_t newmax)
+static boolean K_IsOffroadAffected(player_t *player)
 {
-		return newmin +  FixedMul(FixedDiv( value-oldmin , oldmax-oldmin), newmax-newmin);
+	return (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] 
+		  || ( (cv_chainoffroad.value == 1 || cv_chainoffroad.value == 2) ? player->kartstuff[k_sneakertimer]:player->kartstuff[k_sneakertimer] && player->kartstuff[k_realsneakertimer] )
+		  	|| ( (cv_chainoffroad.value == 1 || cv_chainoffroad.value == 3) ? player->kartstuff[k_paneltimer]:player->kartstuff[k_paneltimer] && player->kartstuff[k_realpaneltimer]) )
+				&& player->kartstuff[k_offroad] >= 0);
+	
 }
 
 // sets k_boostpower, k_speedboost, and k_accelboost to whatever we need it to be
@@ -3539,6 +3636,31 @@ static void K_GetKartBoostPower(player_t *player)
 {
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0;
+
+	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
+	{
+		player->kartstuff[k_boostpower] = player->kartstuff[k_speedboost] = player->kartstuff[k_accelboost] = 0;
+		return;
+	}
+
+	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
+	if (K_IsOffroadAffected(player) == true)
+		boostpower = FixedDiv(boostpower, player->kartstuff[k_offroad] + FRACUNIT);
+
+	if (player->kartstuff[k_bananadrag] > TICRATE)
+		boostpower = (4*boostpower)/5;
+
+	// Banana drag/offroad dust
+	if (boostpower < FRACUNIT
+		&& player->mo && P_IsObjectOnGround(player->mo)
+		&& player->speed > 0
+		&& !player->spectator)
+	{
+		K_SpawnWipeoutTrail(player->mo, true);
+		if (leveltime % 6 == 0)
+			S_StartSound(player->mo, sfx_cdfm70);
+	}
+
 	
 	fixed_t sneakeraccelboost = 0;
 	fixed_t sneakerspeedboost = 0;
@@ -3563,19 +3685,100 @@ static void K_GetKartBoostPower(player_t *player)
 	fixed_t hyudoroaccelboost = 0;
 	fixed_t hyudorospeedboost = 0;
 		
-	fixed_t boostmultbase =  FRACUNIT;
-	fixed_t boostmult = 0;
-	fixed_t finalboostmult = 0;
-	fixed_t boostincrease = 0;
+	if (player->kartstuff[k_sneakertimer]) // Sneaker
+	{
+		switch (gamespeed)
+		{
+			case 0:
+				speedboost = max(speedboost, 53740+768);
+				break;
+			case 2:
+				speedboost = max(speedboost, 17294+768);
+				break;
+			//Expert
+			case 3:
+				speedboost = max(speedboost, 14706);
+				break;
+			default:
+				speedboost = max(speedboost, 32768);
+				break;
+		}
+		accelboost = max(accelboost, 8*FRACUNIT); // + 800%
+	}
+
+	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
+	{
+		speedboost = max(speedboost, 3*FRACUNIT/8); // + 37.5%
+		accelboost = max(accelboost, 3*FRACUNIT); // + 300%
+	}
+
+	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
+	{
+		speedboost = max(speedboost, FRACUNIT/5); // + 20%	
+	}
+
+	if (player->kartstuff[k_driftboost]) // Drift Boost
+	{
+		speedboost = max(speedboost, FRACUNIT/4); // + 25%
+		accelboost = max(accelboost, 4*FRACUNIT); // + 400%
+	}
+
+	if (player->kartstuff[k_startboost]) // Startup Boost
+	{
+		speedboost = max(speedboost, FRACUNIT/4); // + 25%
+		accelboost = max(accelboost, 6*FRACUNIT); // + 300%
+	}
+
+	// don't average them anymore, this would make a small boost and a high boost less useful
+	// just take the highest we want instead
+	player->kartstuff[k_boostpower] = boostpower;
+
+	// value smoothing
+	if (speedboost > player->kartstuff[k_speedboost])
+		player->kartstuff[k_speedboost] = speedboost;
+	else
+		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);	
 	
-	fixed_t intermediate = 0;
+	player->kartstuff[k_accelboost] = accelboost;
+}
+
+// Rescale oh boy based on old version of blib
+static fixed_t K_BoostRescale(fixed_t value,fixed_t oldmin,fixed_t oldmax,fixed_t newmin,fixed_t newmax)
+{
+		return newmin +  FixedMul(FixedDiv( value-oldmin , oldmax-oldmin), newmax-newmin);
+}
+
+// Diminish based on old version of blib diminsh calcs.
+static fixed_t K_SpeedboostDiminish(fixed_t speedboost, fixed_t diminishvalue)
+{
+	fixed_t intermediate;
+	fixed_t harddiminish;
+	if (gamespeed <= 1 && speedboost > FRACUNIT/2)
+	{	
+		intermediate = FixedDiv(FixedMul(diminishvalue,FRACUNIT*-1/2) - FRACUNIT/4,-diminishvalue+FRACUNIT/2);
+		return FixedMul(diminishvalue,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
+	}
+	else if (gamespeed == 2 && speedboost > FRACUNIT*375/1000)
+	{
+		harddiminish = K_BoostRescale(diminishvalue, FRACUNIT, 2*FRACUNIT, FRACUNIT*95/100, FRACUNIT*180/100);
+		intermediate = FixedDiv(FixedMul(harddiminish,FRACUNIT*-625/1000) - 9216,-harddiminish+FRACUNIT*375/1000);
+		return FixedMul(harddiminish,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
+	}
+	else if (gamespeed == 3 && speedboost > FRACUNIT*375/1000)
+	{
+		harddiminish = K_BoostRescale(diminishvalue, FRACUNIT, 2*FRACUNIT, FRACUNIT*95/100, FRACUNIT*180/100);
+		intermediate = FixedDiv(FixedMul(harddiminish,FRACUNIT*-625/1000) - 9216,-harddiminish+FRACUNIT*375/1000);
+		return FixedMul(harddiminish,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
+	}
 	
-	fixed_t harddiminish = 0;
-		
-	int s;
-	fixed_t speedtablesum = 0;
-	int a;
-	fixed_t acceltablesum = 0;
+	return speedboost;
+}
+
+static void K_GetKartStackingBoostPower(player_t *player)
+{
+	fixed_t boostpower = FRACUNIT;
+	fixed_t speedboost = 0, accelboost = 0, nonstackboost = 0;
+	fixed_t boostmult = FRACUNIT;
 
 	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
 	{
@@ -3584,10 +3787,7 @@ static void K_GetKartBoostPower(player_t *player)
 	}
 
 	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
-	if (!(player->kartstuff[k_invincibilitytimer] || player->kartstuff[k_hyudorotimer] 
-		  || ( (cv_chainoffroad.value == 1 || cv_chainoffroad.value == 2) ? player->kartstuff[k_sneakertimer]:player->kartstuff[k_sneakertimer] && player->kartstuff[k_realsneakertimer] )
-		  	|| ( (cv_chainoffroad.value == 1 || cv_chainoffroad.value == 3) ? player->kartstuff[k_paneltimer]:player->kartstuff[k_paneltimer] && player->kartstuff[k_realpaneltimer]) )
-				&& player->kartstuff[k_offroad] >= 0)
+	if (K_IsOffroadAffected(player) == true)
 		boostpower = FixedDiv(boostpower, player->kartstuff[k_offroad] + FRACUNIT);
 
 	if (player->kartstuff[k_bananadrag] > TICRATE)
@@ -3603,47 +3803,46 @@ static void K_GetKartBoostPower(player_t *player)
 		if (leveltime % 6 == 0)
 			S_StartSound(player->mo, sfx_cdfm70);
 	}
-
+// Using macros now, very nice!	
+#define ADDBOOST(s,a,b,ns) { \
+	speedboost += max(s, speedboost); \
+	accelboost = max(a, accelboost); \
+	boostmult += b; \
+	nonstackboost = max(ns, nonstackboost); \
+}
 	
-	//Booststacking
-	if (cv_stacking.value)	
+	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_paneltimer]) // Sneaker
 	{
-		if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_paneltimer]) // Sneaker
+		UINT8 combostack = player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack];
+		fixed_t sneakerspeedboost = 0;
+		switch (gamespeed)
 		{
-			combostack = player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack];
-			switch (gamespeed)
-			{
-				case 0:
-					sneakerspeedboost = max(speedboost, cv_sneakerspeedeasy.value)* (combostack ? combostack : 1);
-					break;
-				case 2:
-					sneakerspeedboost = max(speedboost, cv_sneakerspeedhard.value)* (combostack ? combostack : 1); 
-					break;
-				case 3:
-					sneakerspeedboost = max(speedboost, cv_sneakerspeedexpert.value)* (combostack ? combostack : 1); 
-					break;
-				default:
-					sneakerspeedboost = max(speedboost, cv_sneakerspeednormal.value) * (combostack ? combostack : 1);
-					break;
-			}
-				sneakeraccelboost = max(accelboost, cv_sneakeraccel.value); // + 800%  524288
+			case 0:
+				sneakerspeedboost = cv_sneakerspeedeasy.value;
+				break;
+			case 1:
+				sneakerspeedboost = cv_sneakerspeednormal.value;
+				break;
+			case 2:
+				sneakerspeedboost = cv_sneakerspeedhard.value; 
+				break;
+			case 3:
+				sneakerspeedboost = cv_sneakerspeedexpert.value; 
+				break;
 		}
-		else
-		{
-			player->kartstuff[k_sneakerstack] = 0;
-			player->kartstuff[k_panelstack] = 0;
-		}
-			
-		if (player->kartstuff[k_invincibilitytimer]) // Invincibility
-		{
-			invincibilityspeedboost = max(speedboost, cv_invincibilityspeed.value); // + 37.5% 24576
-			invincibilityaccelboost = max(accelboost, cv_invincibilityaccel.value); // + 300% 196608 
-			player->kartstuff[k_invincibilitystack] = 1;
-		}
-		else
-		{
-			player->kartstuff[k_invincibilitystack] = 0;
-		}
+			ADDBOOST(sneakerspeedboost * (combostack ? combostack : 1), cv_sneakeraccel.value, 0,0); // + ???%,  + 800%  524288, 0
+	}
+		
+	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
+	{
+		ADDBOOST(cv_invincibilityspeed.value,cv_invincibilityaccel.value,0,0);  // + 37.5% 2457, + 300% 196608, 0
+		player->kartstuff[k_invincibilitystack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_invincibilitystack] = 0;
+	}
+
 		
 		if (player->kartstuff[k_flamedash]) // Flame Shield dash
 		{
@@ -3653,29 +3852,89 @@ static void K_GetKartBoostPower(player_t *player)
 			flameaccelboost = max(accelboost, cv_flameaccel.value); // + 100% acceleration
 		}
 
-		if (player->kartstuff[k_growshrinktimer] > 0) // Grow plus blib buffs
-		{
-			growspeedboost = max(speedboost, cv_growspeed.value);
-			growaccelboost = max(accelboost, cv_growaccel.value);
-			growboostmult = max(boostmult, cv_growmult.value);
-			//boostmult = growboostmult;
-		}
-		else
-		{
-			growboostmult = 0;
-		}
+	if (player->kartstuff[k_growshrinktimer] > 0) // Grow
+	{
+		ADDBOOST(0, cv_growaccel.value,cv_growmult.value,cv_growspeed.value); // ???
+	}
 
-		if (player->kartstuff[k_driftboost]) // Drift Boost
-		{
+	if (player->kartstuff[k_driftboost]) // Drift Boost
+	{
+		ADDBOOST(cv_driftspeed.value, cv_driftaccel.value, 0,0); // + 25% 16384, + 400% 262144, 0
+		player->kartstuff[k_driftstack] = 1;
+	}										
+	else
+	{
+		player->kartstuff[k_driftstack] = 0;
+	}
 
-			driftspeedboost = max(speedboost, cv_driftspeed.value); // + 25% 16384
-			driftaccelboost = max(accelboost, cv_driftaccel.value); // + 400% 262144
-			player->kartstuff[k_driftstack] = 1;
-		}										
-		else
-		{
-			player->kartstuff[k_driftstack] = 0;
-		}
+	if (player->kartstuff[k_startboost]) // Startup Boost
+	{
+		ADDBOOST(cv_startspeed.value, cv_startaccel.value, 0,0); // + 25% 16384, + 300% 393216, 0
+		player->kartstuff[k_startstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_startstack] = 0;
+	}
+	
+	if (player->kartstuff[k_hyudorotimer])
+	{
+		ADDBOOST(cv_hyuudorospeed.value, cv_hyuudoroaccel.value, 0,0); // ???
+	}
+	
+	if (player->kartstuff[k_slopespeedboost] || player->kartstuff[k_slopeaccelboost])
+	{
+		ADDBOOST(player->kartstuff[k_slopespeedboost], player->kartstuff[k_slopeaccelboost], 0,0); // ???
+		player->kartstuff[k_ssstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_ssstack] = 0;
+	}
+	
+	if (player->kartstuff[k_ssspeedboost] || player->kartstuff[k_ssaccelboost])
+	{
+		ADDBOOST(player->kartstuff[k_ssspeedboost], player->kartstuff[k_ssaccelboost], 0,0); // ???
+		player->kartstuff[k_ssstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_ssstack] = 0;
+	}
+	
+	if (player->kartstuff[k_trickspeedboost] || player->kartstuff[k_trickaccelboost])
+	{
+		ADDBOOST(player->kartstuff[k_trickspeedboost], player->kartstuff[k_trickaccelboost], 0,0); // ???
+		player->kartstuff[k_trickstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_trickstack] = 0;
+	}
+	
+	speedboost = max(speedboost,nonstackboost); // Handle Non-Stack Boosts
+	
+	player->kartstuff[k_totalstacks] = player->kartstuff[k_startstack] + player->kartstuff[k_driftstack] + player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack] + player->kartstuff[k_ssstack] + player->kartstuff[k_invincibilitystack] + player->kartstuff[k_trickstack];
+	
+	// Diminish based on old version of blib diminsh calcs.
+	if (cv_stackingdim.value)
+		speedboost = K_SpeedboostDiminish(speedboost, cv_stackingdimval.value);
+
+	// value smoothing
+	if (speedboost > player->kartstuff[k_speedboost])
+		player->kartstuff[k_speedboost] = speedboost;
+	// brakemod. slowdown on braking or sliptide (based on version from booststack)
+	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < 5) || (player->cmd.buttons & BT_BRAKE)))
+    	player->kartstuff[k_speedboost] = max(speedboost - cv_stackingbrakemod.value, min(player->kartstuff[k_speedboost], 3*FRACUNIT/8));
+	else
+		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
+
+	player->kartstuff[k_accelboost] = accelboost;
+	
+	player->kartstuff[k_boostpower] = boostpower + (FixedMul(player->kartstuff[k_speedboost], boostmult) - player->kartstuff[k_speedboost]);
+	if (speedboost > 0 && player->kartspeed < 6 && cv_stackinglowspeedbuff.value)
+	{
+		if (K_IsOffroadAffected(player) == false)
 
 		if (player->kartstuff[k_startboost]) // Startup Boost
 		{
@@ -3721,47 +3980,64 @@ static void K_GetKartBoostPower(player_t *player)
 		
 		for( s = 0 ; s <  speedsize; s++ )
 		{
-			speedtablesum += speedtable[s];
+			fixed_t boostincrease;
+			boostincrease = 7 - player->kartspeed;
+			player->kartstuff[k_boostpower] = player->kartstuff[k_boostpower] + ((FRACUNIT*boostincrease)/100);
 		}
-		
-		
-		for( a = 0 ; a <  accelsize; a++ )
-		{
-			acceltablesum += acceltable[a];
-		}
-		
-		finalboostmult = boostmultbase - growboostmult;
-		
-		speedboost = speedtablesum;
-		accelboost = acceltablesum;
-		boostmult = finalboostmult;
-		player->kartstuff[k_totalstacks] = player->kartstuff[k_startstack] + player->kartstuff[k_driftstack] + player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack] + player->kartstuff[k_ssstack] + player->kartstuff[k_invincibilitystack] + player->kartstuff[k_trickstack];
-	//Vanilla speed stuff
 	}
-	else
-	{
-		
-		if (player->kartstuff[k_sneakertimer]) // Sneaker
-		{
-			switch (gamespeed)
-			{
-				case 0:
-					speedboost = max(speedboost, 53740+768);
-					break;
-				case 2:
-					speedboost = max(speedboost, 17294+768);
-					break;
-				//Expert
-				case 3:
-					speedboost = max(speedboost, 14706);
-					break;
-				default:
-					speedboost = max(speedboost, 32768);
-					break;
-			}
-			accelboost = max(accelboost, 8*FRACUNIT); // + 800%
-		}
 
+	if (cv_speedcap.value) // Why does this even need to exist now. I guess I'll keep for compat.
+	{
+	   player->speed = min(player->speed, FixedMul(cv_speedcapval.value, mapobjectscale));
+	}
+}
+
+// I can't be arsed to force this in the new calcs lel
+static void K_GetKartStackingOldBoostPower(player_t *player)
+{
+	fixed_t boostpower = FRACUNIT;
+	fixed_t speedboost = 0, accelboost = 0;
+	
+	fixed_t sneakeraccelboost = 0;
+	fixed_t sneakerspeedboost = 0;
+	INT32 combostack = 0;
+		
+	fixed_t invincibilityaccelboost = 0;
+	fixed_t invincibilityspeedboost = 0;
+			
+	fixed_t growspeedboost = 0;
+	fixed_t growaccelboost = 0;
+	fixed_t growboostmult = 0;
+			
+	fixed_t driftaccelboost = 0;
+	fixed_t driftspeedboost = 0;
+			
+	fixed_t startaccelboost = 0;
+	fixed_t startspeedboost = 0;
+	
+	fixed_t hyudoroaccelboost = 0;
+	fixed_t hyudorospeedboost = 0;
+		
+	fixed_t boostmultbase =  FRACUNIT;
+	fixed_t boostmult = 0;
+	fixed_t finalboostmult = 0;
+	fixed_t boostincrease = 0;
+		
+	int s;
+	fixed_t speedtablesum = 0;
+	int a;
+	fixed_t acceltablesum = 0;
+
+	if (player->kartstuff[k_spinouttimer] && player->kartstuff[k_wipeoutslow] == 1) // Slow down after you've been bumped
+	{
+		player->kartstuff[k_boostpower] = player->kartstuff[k_speedboost] = player->kartstuff[k_accelboost] = 0;
+		return;
+	}
+
+	// Offroad is separate, it's difficult to factor it in with a variable value anyway.
+	if (K_IsOffroadAffected(player) == true)
+		boostpower = FixedDiv(boostpower, player->kartstuff[k_offroad] + FRACUNIT);
+=======
 		if (player->kartstuff[k_invincibilitytimer]) // Invincibility
 		{
 			speedboost = max(speedboost, 3*FRACUNIT/8); // + 37.5%
@@ -3776,97 +4052,176 @@ static void K_GetKartBoostPower(player_t *player)
 			accelboost = max(accelboost, FRACUNIT); // + 300% 196608 
 		}
 
-		if (player->kartstuff[k_growshrinktimer] > 0) // Grow
-		{
-			speedboost = max(speedboost, FRACUNIT/5); // + 20%	
-		}
+	if (player->kartstuff[k_bananadrag] > TICRATE)
+		boostpower = (4*boostpower)/5;
 
-		if (player->kartstuff[k_driftboost]) // Drift Boost
-		{
-			speedboost = max(speedboost, FRACUNIT/4); // + 25%
-			accelboost = max(accelboost, 4*FRACUNIT); // + 400%
-		}
-
-		if (player->kartstuff[k_startboost]) // Startup Boost
-		{
-			speedboost = max(speedboost, FRACUNIT/4); // + 25%
-			accelboost = max(accelboost, 6*FRACUNIT); // + 300%
-		}
-		
-		
-	}
-
-	// don't average them anymore, this would make a small boost and a high boost less useful
-	// just take the highest we want instead
-
-	
-	player->kartstuff[k_boostpower] = boostpower;
-	if (cv_stacking.value)
+	// Banana drag/offroad dust
+	if (boostpower < FRACUNIT
+		&& player->mo && P_IsObjectOnGround(player->mo)
+		&& player->speed > 0
+		&& !player->spectator)
 	{
-		
-		//This here is the boostmult, its implemented as an adjustment to boostpower
-		player->kartstuff[k_boostpower] = player->kartstuff[k_boostpower] + (FixedMul(player->kartstuff[k_speedboost], boostmult) - player->kartstuff[k_speedboost]);
-		
-		if (speedboost > 0 && player->kartspeed < 6) {
-			//Apply a bonus top speed to lower speeds only while boosting
-			if (player->kartstuff[k_offroad] && !player->kartstuff[k_hyudorotimer] && !player->kartstuff[k_invincibilitytimer] && ( !player->kartstuff[k_sneakertimer] || !player->kartstuff[k_paneltimer] ))
-			{	
-				//No getting free offroad with drift boosts alone
-			}
-			else
-			{
-				boostincrease = 7 - player->kartspeed;
-				player->kartstuff[k_boostpower] = player->kartstuff[k_boostpower] + ((FRACUNIT*boostincrease)/100);
-			}
-
-		}
+		K_SpawnWipeoutTrail(player->mo, true);
+		if (leveltime % 6 == 0)
+			S_StartSound(player->mo, sfx_cdfm70);
 	}
 
-	
+	if (player->kartstuff[k_sneakertimer] || player->kartstuff[k_paneltimer]) // Sneaker
+	{
+		combostack = player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack];
+		switch (gamespeed)
+		{
+			case 0:
+				sneakerspeedboost = max(speedboost, cv_sneakerspeedeasy.value)* (combostack ? combostack : 1);
+				break;
+			case 2:
+				sneakerspeedboost = max(speedboost, cv_sneakerspeedhard.value)* (combostack ? combostack : 1); 
+				break;
+			case 3:
+				sneakerspeedboost = max(speedboost, cv_sneakerspeedexpert.value)* (combostack ? combostack : 1); 
+				break;
+			default:
+				sneakerspeedboost = max(speedboost, cv_sneakerspeednormal.value) * (combostack ? combostack : 1);
+				break;
+		}
+			sneakeraccelboost = max(accelboost, cv_sneakeraccel.value); // + 800%  524288
+	}
+	else
+	{
+		player->kartstuff[k_sneakerstack] = 0;
+		player->kartstuff[k_panelstack] = 0;
+	}
+		
+	if (player->kartstuff[k_invincibilitytimer]) // Invincibility
+	{
+		invincibilityspeedboost = max(speedboost, cv_invincibilityspeed.value); // + 37.5% 24576
+		invincibilityaccelboost = max(accelboost, cv_invincibilityaccel.value); // + 300% 196608 
+		player->kartstuff[k_invincibilitystack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_invincibilitystack] = 0;
+	}
 
-	//Diminish based on old version of blib diminsh calcs.
-	if (cv_stacking.value && cv_stackingdim.value)
-	{	
-		if (gamespeed <= 1 && speedboost > FRACUNIT/2)
+	if (player->kartstuff[k_growshrinktimer] > 0) // Grow plus blib buffs
+	{
+		growspeedboost = max(speedboost, cv_growspeed.value);
+		growaccelboost = max(accelboost, cv_growaccel.value);
+		growboostmult = max(boostmult, cv_growmult.value);
+	}
+	else
+	{
+		growboostmult = 0;
+	}
+
+	if (player->kartstuff[k_driftboost]) // Drift Boost
+	{
+
+		driftspeedboost = max(speedboost, cv_driftspeed.value); // + 25% 16384
+		driftaccelboost = max(accelboost, cv_driftaccel.value); // + 400% 262144
+		player->kartstuff[k_driftstack] = 1;
+	}										
+	else
+	{
+		player->kartstuff[k_driftstack] = 0;
+	}
+
+	if (player->kartstuff[k_startboost]) // Startup Boost
+	{
+		startspeedboost = max(speedboost, cv_startspeed.value); // + 25% 16384
+		startaccelboost = max(accelboost, cv_startaccel.value); // + 300% 393216 
+		player->kartstuff[k_startstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_startstack] = 0;
+	}
+	
+	if (player->kartstuff[k_hyudorotimer])
+	{
+		hyudorospeedboost = max(speedboost, cv_hyuudorospeed.value);
+		hyudoroaccelboost = max(accelboost, cv_hyuudoroaccel.value);
+	}
+	
+	if (player->kartstuff[k_ssspeedboost] || player->kartstuff[k_ssaccelboost])
+	{
+		player->kartstuff[k_ssstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_ssstack] = 0;
+	}
+	
+	if (player->kartstuff[k_trickspeedboost] || player->kartstuff[k_trickaccelboost])
+	{
+		player->kartstuff[k_trickstack] = 1;
+	}
+	else
+	{
+		player->kartstuff[k_trickstack] = 0;
+	}
+	
+	
+	// The idea here is to get every boost, put it in a table, sort by strengeth and then add them all together.
+	fixed_t speedtable[] = { hyudorospeedboost, player->kartstuff[k_slopespeedboost] ,player->kartstuff[k_ssspeedboost],startspeedboost, driftspeedboost,player->kartstuff[k_trickspeedboost], growspeedboost, sneakerspeedboost, invincibilityspeedboost };
+	fixed_t acceltable[] = { hyudoroaccelboost, player->kartstuff[k_slopeaccelboost] ,player->kartstuff[k_ssaccelboost],growaccelboost, startaccelboost,player->kartstuff[k_trickaccelboost], invincibilityaccelboost, driftaccelboost, sneakeraccelboost };
+	fixed_t speedsize = sizeof(speedtable) / sizeof(speedtable[0]);
+	fixed_t accelsize = sizeof(speedtable) / sizeof(speedtable[0]);
+	
+	for( s = 0 ; s <  speedsize; s++ )
+	{
+		speedtablesum += speedtable[s];
+	}
+	
+	
+	for( a = 0 ; a <  accelsize; a++ )
+	{
+		acceltablesum += acceltable[a];
+	}
+	
+	finalboostmult = boostmultbase - growboostmult;
+	
+	speedboost = speedtablesum;
+	accelboost = acceltablesum;
+	boostmult = finalboostmult;
+	player->kartstuff[k_totalstacks] = player->kartstuff[k_startstack] + player->kartstuff[k_driftstack] + player->kartstuff[k_sneakerstack] + player->kartstuff[k_panelstack] + player->kartstuff[k_ssstack] + player->kartstuff[k_invincibilitystack] + player->kartstuff[k_trickstack];
+
+	//This here is the boostmult, its implemented as an adjustment to boostpower
+	player->kartstuff[k_boostpower] = boostpower+ (FixedMul(player->kartstuff[k_speedboost], boostmult) - player->kartstuff[k_speedboost]);
+	
+	if (speedboost > 0 && player->kartspeed < 6 && cv_stackinglowspeedbuff.value) {
+		//Apply a bonus top speed to lower speeds only while boosting
+		if (K_IsOffroadAffected(player) == true)
 		{	
-			intermediate = FixedDiv(FixedMul(cv_stackingdimval.value,FRACUNIT*-1/2) - FRACUNIT/4,-cv_stackingdimval.value+FRACUNIT/2);
-			speedboost = FixedMul(cv_stackingdimval.value,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
+			//No getting free offroad with drift boosts alone
 		}
-		else if (gamespeed == 2 && speedboost > FRACUNIT*375/1000)
+		else
 		{
-			harddiminish = K_BoostRescale(cv_stackingdimval.value, FRACUNIT, 2*FRACUNIT, FRACUNIT*95/100, FRACUNIT*180/100);
-			intermediate = FixedDiv(FixedMul(harddiminish,FRACUNIT*-625/1000) - 9216,-harddiminish+FRACUNIT*375/1000);
-			speedboost = FixedMul(harddiminish,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
+			boostincrease = 7 - player->kartspeed;
+			player->kartstuff[k_boostpower] = player->kartstuff[k_boostpower] + ((FRACUNIT*boostincrease)/100);
 		}
-		else if (gamespeed == 3 && speedboost > FRACUNIT*375/1000)
-		{
-			harddiminish = K_BoostRescale(cv_stackingdimval.value, FRACUNIT, 2*FRACUNIT, FRACUNIT*95/100, FRACUNIT*180/100);
-			intermediate = FixedDiv(FixedMul(harddiminish,FRACUNIT*-625/1000) - 9216,-harddiminish+FRACUNIT*375/1000);
-			speedboost = FixedMul(harddiminish,(FRACUNIT-FixedDiv(FRACUNIT,(speedboost+intermediate))));
-		}
+
 	}
 
-		// value smoothing
-		if (speedboost > player->kartstuff[k_speedboost])
-			player->kartstuff[k_speedboost] = speedboost;
+	// Diminish based on old version of blib diminsh calcs.
+	if (cv_stackingdim.value)
+		speedboost = K_SpeedboostDiminish(speedboost, cv_stackingdimval.value);
+
+	// value smoothing
+	if (speedboost > player->kartstuff[k_speedboost])
+		player->kartstuff[k_speedboost] = speedboost;
+	//brakemod. slowdown on braking or sliptide (based on version from booststack)
+	else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < 5) || (player->cmd.buttons & BT_BRAKE)))
+    	player->kartstuff[k_speedboost] = max(speedboost - cv_stackingbrakemod.value, min(player->kartstuff[k_speedboost], 3*FRACUNIT/8));
+	else
+		player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
 	
-		//brakemod. slowdown on braking or sliptide (based on version from booststack)
-		else if (cv_stacking.value && cv_stackingbrakemod.value && ((player->kartstuff[k_aizdriftstrat] && abs(player->kartstuff[k_drift]) < 5) || (player->cmd.buttons & BT_BRAKE)))
-        	player->kartstuff[k_speedboost] = max(speedboost - cv_stackingbrakemod.value, min(player->kartstuff[k_speedboost], 3*FRACUNIT/8));
-		else
-			player->kartstuff[k_speedboost] += (speedboost - player->kartstuff[k_speedboost])/(TICRATE/2);
-	
-	
-	 
-		if(cv_speedcap.value)
-		{
-		   player->speed = min(player->speed, FixedMul(cv_speedcapval.value, mapobjectscale));
-		}
-	
-	
-		player->kartstuff[k_accelboost] = accelboost;
-	
-	
+	if(cv_speedcap.value)
+	{
+	   player->speed = min(player->speed, FixedMul(cv_speedcapval.value, mapobjectscale));
+	}
+
+	player->kartstuff[k_accelboost] = accelboost;
 }
 
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
@@ -3889,9 +4244,8 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		case 2:
 			g_cc = 77824 + xspd; // 150cc = 118.75 + 4.69 = 123.44%
 			break;
-		//expert speed
-		case 3:
-			g_cc = 90112 + xspd; // 150cc = 118.75 + 4.69 = 123.44%
+		case 3: //expert speed
+			g_cc = 90112 + xspd; // 200c = ???
 			break;
 		default:
 			g_cc = 65536 + xspd; // 100cc = 100.00 + 4.69 = 104.69%
@@ -4042,12 +4396,15 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 	// PS: Inflictor is unused for all purposes here and is actually only ever relevant to Lua. It may be nil too.
 	boolean force = false;	// Used to check if Lua ShouldSpin should get us damaged reguardless of flashtics or heck knows what.
 	UINT8 shouldForce = LUAh_ShouldSpin(player, inflictor, source);
+
 	if (P_MobjWasRemoved(player->mo))
 		return; // mobj was removed (in theory that shouldn't happen)
 	if (shouldForce == 1)
 		force = true;
 	else if (shouldForce == 2)
 		return;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	if (!trapitem && G_BattleGametype())
 	{
@@ -4075,7 +4432,7 @@ void K_SpinPlayer(player_t *player, mobj_t *source, INT32 type, mobj_t *inflicto
 		return;
 
 	if (source && source != player->mo && source->player)
-		K_PlayHitEmSound(source);
+		K_PlayHitEmSound(source, player->mo);
 
 	//player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_driftboost] = 0;
@@ -4276,7 +4633,7 @@ void K_SquishPlayer(player_t *player, mobj_t *source, mobj_t *inflictor)
 	if (player->mo->state != &states[S_KART_SQUISH]) // Squash
 		P_SetPlayerMobjState(player->mo, S_KART_SQUISH);
 
-	P_PlayRinglossSound(player->mo);
+	P_PlayRinglossSound(player->mo, source);
 
 	player->kartstuff[k_instashield] = 15;
 	if (cv_kartdebughuddrop.value && !modeattacking)
@@ -4299,6 +4656,8 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		force = true;
 	else if (shouldForce == 2)
 		return;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	if (G_BattleGametype())
 	{
@@ -4326,7 +4685,7 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 		return;
 
 	if (source && source != player->mo && source->player)
-		K_PlayHitEmSound(source);
+		K_PlayHitEmSound(source, player->mo);
 
 	player->kartstuff[k_sneakertimer] = 0;
 	player->kartstuff[k_paneltimer] = 0;
@@ -4408,12 +4767,11 @@ void K_ExplodePlayer(player_t *player, mobj_t *source, mobj_t *inflictor) // A b
 	if (player->mo->state != &states[S_KART_SPIN])
 		P_SetPlayerMobjState(player->mo, S_KART_SPIN);
 
-	P_PlayRinglossSound(player->mo);
+	P_PlayRinglossSound(player->mo, source);
 
 	if (P_IsLocalPlayer(player))
 	{
-		quake.intensity = 64*FRACUNIT;
-		quake.time = 5;
+		P_StartQuake(5, 64<<FRACBITS, 0);
 	}
 
 	player->kartstuff[k_instashield] = 15;
@@ -5810,7 +6168,7 @@ static void K_SneakerPanelStackSound(player_t *player)
 	const sfxenum_t smallsfx = sfx_cdfm40;
 	sfxenum_t sfx = normalsfx;
 
-	if (((player->kartstuff[k_sneakerstack] > 0) ||  (player->kartstuff[k_panelstack] > 0)) && cv_sneakerstacksound.value)
+	if ((((player->kartstuff[k_sneakerstack] > 0) && (cv_sneakerstack.value > 1)) || ((player->kartstuff[k_panelstack] > 0) && (cv_panelstack.value > 1))) && cv_sneakerstacksound.value)
 	{
 		// Use a less annoying sound when stacking sneakers.
 		sfx = smallsfx;
@@ -5898,8 +6256,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{	
 		player->kartstuff[k_sneakerstack] = min(player->kartstuff[k_sneakerstack] + 1,cv_sneakerstack.value);
 	}
-	
-		
+
 	// set angle for spun out players:
 	player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
 
@@ -6066,6 +6423,9 @@ void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
 	mobj_t *cachenext;
 
 killnext:
+	if (P_MobjWasRemoved(banana))
+		return;
+
 	cachenext = banana->hnext;
 
 	if (banana->health)
@@ -6375,10 +6735,8 @@ void K_RepairOrbitChain(mobj_t *orbit)
 	}
 
 	// Then recount to make sure item amount is correct
-	if (orbit->target && orbit->target->player)
+	if (orbit->target && orbit->target->player && !P_MobjWasRemoved(orbit->target))
 	{
-		player_t *player = orbit->target->player;
-
 		INT32 num = 0;
 
 		mobj_t *cur = orbit->target->hnext;
@@ -6388,14 +6746,14 @@ void K_RepairOrbitChain(mobj_t *orbit)
 		{
 			prev = cur;
 			cur = cur->hnext;
-			if (++num > player->kartstuff[k_itemamount])
+			if (++num > orbit->target->player->kartstuff[k_itemamount])
 				P_RemoveMobj(prev);
 			else
 				prev->movedir = num;
 		}
 
-		if (player->kartstuff[k_itemamount] != num)
-			player->kartstuff[k_itemamount] = num;
+		if (orbit->target && !P_MobjWasRemoved(orbit->target) && orbit->target->player->kartstuff[k_itemamount] != num)
+			orbit->target->player->kartstuff[k_itemamount] = num;
 	}
 }
 
@@ -6539,6 +6897,7 @@ static void K_MoveHeldObjects(player_t *player)
 	if (!player->mo->hnext)
 	{
 		player->kartstuff[k_bananadrag] = 0;
+
 		if (player->kartstuff[k_eggmanheld])
 			player->kartstuff[k_eggmanheld] = 0;
 		else if (player->kartstuff[k_itemheld])
@@ -6554,6 +6913,7 @@ static void K_MoveHeldObjects(player_t *player)
 		// we need this here too because this is done in afterthink - pointers are cleaned up at the START of each tic...
 		P_SetTarget(&player->mo->hnext, NULL);
 		player->kartstuff[k_bananadrag] = 0;
+
 		if (player->kartstuff[k_eggmanheld])
 			player->kartstuff[k_eggmanheld] = 0;
 		else if (player->kartstuff[k_itemheld])
@@ -7048,23 +7408,14 @@ static void K_UpdateEngineSounds(player_t *player, ticcmd_t *cmd)
 static void K_UpdateInvincibilitySounds(player_t *player)
 {
 	INT32 sfxnum = sfx_None;
+	boolean localplayer = P_IsLocalPlayer(player);
 
-	if (player->mo->health > 0 && !P_IsLocalPlayer(player))
+	if (player->mo->health > 0)
 	{
-		if (cv_kartinvinsfx.value)
-		{
-			if (player->kartstuff[k_growshrinktimer] > 0) // Prioritize Grow
-				sfxnum = sfx_alarmg;
-			else if (player->kartstuff[k_invincibilitytimer] > 0)
-				sfxnum = sfx_alarmi;
-		}
-		else
-		{
-			if (player->kartstuff[k_growshrinktimer] > 0)
-				sfxnum = sfx_kgrow;
-			else if (player->kartstuff[k_invincibilitytimer] > 0)
-				sfxnum = sfx_kinvnc;
-		}
+		if (player->kartstuff[k_growshrinktimer] > 0 && (!localplayer || cv_growmusic.value == 2)) // Prioritize Grow
+			sfxnum = cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow;
+		else if (player->kartstuff[k_invincibilitytimer] > 0 && (!localplayer || cv_supermusic.value == 2))
+			sfxnum = cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc;
 	}
 
 	if (sfxnum != sfx_None && !S_SoundPlaying(player->mo, sfxnum))
@@ -7136,8 +7487,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// update boost angle if not spun out
 	if (!player->kartstuff[k_spinouttimer] && !player->kartstuff[k_wipeoutslow])
 		player->kartstuff[k_boostangle] = (INT32)player->mo->angle;
-
-	K_GetKartBoostPower(player);
+	
+	if (cv_stacking.value && !cv_stackingoldcompat.value)
+		K_GetKartStackingBoostPower(player);
+	else if (cv_stacking.value && cv_stackingoldcompat.value)
+		K_GetKartStackingOldBoostPower(player);
+	else
+		K_GetKartBoostPower(player);
 
 	// Speed lines
 	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_paneltimer] || player->kartstuff[k_driftboost] || player->kartstuff[k_startboost]) && player->speed > 0)
@@ -7399,6 +7755,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->kartstuff[k_realpaneltimer] = 0;
 	}
 	
+	if (cv_stacking.value && !(player->kartstuff[k_sneakertimer] || player->kartstuff[k_paneltimer]))
+	{
+		player->kartstuff[k_sneakerstack] = 0;
+		player->kartstuff[k_panelstack] = 0;
+	}
+	
 
 	if (player->kartstuff[k_floorboost])
 		player->kartstuff[k_floorboost]--;
@@ -7561,15 +7923,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else
 		K_KartItemRoulette(player, cmd);
 
+	// Used when karthitemdialog is On
+	K_HandleDelayedHitByEm(player);
+
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
 
-	// Plays the music after the starting countdown.
-	if (P_IsLocalPlayer(player) && leveltime == (starttime + (TICRATE/2)))
-	{
-		S_ChangeMusic(mapmusname, mapmusflags, true);
-		S_ShowMusicCredit();
-	}
+	// Plays the music during and after the starting countdown.
+	if (P_IsLocalPlayer(player))
+		S_StartMapMusic(false);
 }
 
 void K_KartPlayerAfterThink(player_t *player)
@@ -8326,7 +8688,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							P_SetScale(overlay, player->mo->scale);
 						}
 						player->kartstuff[k_invincibilitytimer] = itemtime+(2*TICRATE); // 10 seconds
-						if (P_IsLocalPlayer(player) && cv_supermusic.value && cv_birdmusic.value)
+						if (P_IsLocalPlayer(player) && cv_supermusic.value == 1 && cv_birdmusic.value)
 							S_ChangeMusicSpecial("kinvnc");
 						else
 							S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
@@ -8531,7 +8893,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
 								player->mo->destscale = (6*player->mo->destscale)/8;
 							player->kartstuff[k_growshrinktimer] = itemtime+(4*TICRATE); // 12 seconds
-							if (P_IsLocalPlayer(player) && cv_growmusic.value && cv_birdmusic.value )
+							if (P_IsLocalPlayer(player) && cv_growmusic.value == 1 && cv_birdmusic.value )
 								S_ChangeMusicSpecial("kgrow");
 							else
 								S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
@@ -8892,10 +9254,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if ((leveltime == starttime-(3*TICRATE)) || (leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
 			S_StartSound(NULL, sfx_s3ka7);
 		if (leveltime == starttime)
-		{
 			S_StartSound(NULL, sfx_s3kad);
-			S_StopMusic(); // The GO! sound stops the level start ambience
-		}
 	}
 
 	// Start charging once you're given the opportunity.
@@ -9965,55 +10324,55 @@ static void K_initKartHUD(void)
 
 	if (splitscreen)	// Splitscreen
 	{
-		ITEM_X = 5 + cv_item_xoffset.value;
-		ITEM_Y = 3 + cv_item_yoffset.value;
+		ITEM_X = 5;
+		ITEM_Y = 3;
 
-		LAPS_Y = (BASEVIDHEIGHT/2)-24 + cv_laps_yoffset.value;
+		LAPS_Y = (BASEVIDHEIGHT/2)-24;
 
-		POSI_Y = (BASEVIDHEIGHT/2)- 2 + cv_posi_yoffset.value;
+		POSI_Y = (BASEVIDHEIGHT/2)- 2;
 
-		STCD_Y = BASEVIDHEIGHT/4 + cv_stcd_yoffset.value;
+		STCD_Y = BASEVIDHEIGHT/4;
 
-		MINI_Y = (BASEVIDHEIGHT/2) + cv_mini_yoffset.value;
+		MINI_Y = (BASEVIDHEIGHT/2);
 
 		if (splitscreen > 1)	// 3P/4P Small Splitscreen
 		{
 			// 1P (top left)
-			ITEM_X = -9 + cv_item_xoffset.value;
-			ITEM_Y = -8 + cv_item_yoffset.value;
+			ITEM_X = -9;
+			ITEM_Y = -8;
 
-			LAPS_X = 3 + cv_laps_xoffset.value;
-			LAPS_Y = (BASEVIDHEIGHT/2)-13 + cv_laps_yoffset.value;
+			LAPS_X = 3;
+			LAPS_Y = (BASEVIDHEIGHT/2)-13;
 
-			POSI_X = 24 + cv_posi_xoffset.value;
-			POSI_Y = (BASEVIDHEIGHT/2)- 16 + cv_posi_yoffset.value;
+			POSI_X = 24;
+			POSI_Y = (BASEVIDHEIGHT/2)- 16;
 
 			// 2P (top right)
-			ITEM2_X = BASEVIDWIDTH-39 + cv_item_xoffset.value;
-			ITEM2_Y = -8 + cv_item_yoffset.value;
+			ITEM2_X = BASEVIDWIDTH-39;
+			ITEM2_Y = -8;
 
-			LAPS2_X = BASEVIDWIDTH-3 + cv_laps_xoffset.value;
-			LAPS2_Y = (BASEVIDHEIGHT/2)-13 + cv_laps_yoffset.value;
+			LAPS2_X = BASEVIDWIDTH-3;
+			LAPS2_Y = (BASEVIDHEIGHT/2)-13;
 
-			POSI2_X = BASEVIDWIDTH -4 + cv_posi_xoffset.value;
-			POSI2_Y = (BASEVIDHEIGHT/2)- 16 + cv_posi_yoffset.value;
+			POSI2_X = BASEVIDWIDTH -4;
+			POSI2_Y = (BASEVIDHEIGHT/2)- 16;
 
 			// Reminder that 3P and 4P are just 1P and 2P splitscreen'd to the bottom.
 
-			STCD_X = BASEVIDWIDTH/4 + cv_stcd_xoffset.value;
+			STCD_X = BASEVIDWIDTH/4;
 
-			MINI_X = (3*BASEVIDWIDTH/4) + cv_mini_xoffset.value;
-			MINI_Y = (3*BASEVIDHEIGHT/4) + cv_mini_yoffset.value;
+			MINI_X = (3*BASEVIDWIDTH/4);
+			MINI_Y = (3*BASEVIDHEIGHT/4);
 
 			if (splitscreen > 2) // 4P-only
 			{
-				MINI_X = (BASEVIDWIDTH/2) + cv_mini_xoffset.value;
-				MINI_Y = (BASEVIDHEIGHT/2) + cv_mini_yoffset.value;
+				MINI_X = (BASEVIDWIDTH/2);
+				MINI_Y = (BASEVIDHEIGHT/2);
 			}
 		}
 	}
 
-	if (timeinmap > 113)
+	if (timeinmap > 113 || forceshowhud)
 		hudtrans = cv_translucenthud.value;
 	else if (timeinmap > 105)
 		hudtrans = ((((INT32)timeinmap) - 105)*cv_translucenthud.value)/(113-105);
@@ -10168,49 +10527,6 @@ static void K_drawKartStats(void)
 
 	if (!LUA_HudEnabled(hud_statdisplay))
 		return;
-
-	// I tried my best, but this is still mess :/
-	if (splitscreen)
-	{
-		if (splitscreen == 1)
-		{
-			// If we are in 2-player splitscreen, for player 1 we move hud to up and remove snapping
-			// to bottom
-			if (splitnum == 0)
-			{
-				y /= 2;
-				flags = V_SNAPTOLEFT;
-			}
-			else
-			{
-				// Can move it down a bit
-				y += 20;
-			}
-		}
-		else
-		{
-			// In 4-player splitscreen...
-			flags = 0;
-
-			// ...For players 2 and 4, which are at right side, we move x coordinate...
-			if (splitnum == 1 || splitnum == 3)
-				x += BASEVIDWIDTH/2;
-			// ...Else, for players on left side we can snap position to left...
-			else
-				flags |= V_SNAPTOLEFT;
-
-			// ...For players 1 and 2, which are at top side, we move y coordinate...
-			if (splitnum == 0 || splitnum == 1)
-				y /= 2;
-			// ...Else, for players on bottom side we can snap position to bottom
-			else
-			{
-				flags |= V_SNAPTOBOTTOM;
-				// Can move it down a bit
-				y += 20;
-			}
-		}
-	}
 	
 	//Internal offset for speedometer
 	if (cv_kartspeedometer.value)
@@ -10222,10 +10538,49 @@ static void K_drawKartStats(void)
 	}
 	else
 		spdoffset = 0;
-	
+
 	// Customizations c:
-	x += 18 + cv_stat_xoffset.value;
-	y += cv_stat_yoffset.value + (G_BattleGametype() ? (stplyr->kartstuff[k_bumper] ? -5 : -8) : 0) + spdoffset;
+	if (!splitscreen)
+	{
+		x += 18 + cv_stat_xoffset.value;
+		y += cv_stat_yoffset.value + (G_BattleGametype() ? (stplyr->kartstuff[k_bumper] ? -5 : -8) : 0) + spdoffset;
+	}
+	else if (splitscreen == 1)	// I tried my best, but this is still mess :/ < :Blobcatpats: c:
+	{
+		x -= 10;
+		y -= 40;
+		y += (G_BattleGametype() ? (stplyr->kartstuff[k_bumper] ? -5 : -8) : 0);
+
+		// If we are in 2-player splitscreen, for player 1 we move hud to up and remove snapping
+		// to bottom
+		if (splitnum == 0)
+		{
+			y /= 2;
+			flags = V_SNAPTOLEFT;
+		}
+		else
+		{
+			// Can move it down a bit
+			y += 45;
+		}
+	}
+	else
+	{
+		if (splitnum == 0 || splitnum == 2) // If we are P1 or P3...
+		{
+			// ye i just align it to position number lol
+			x = POSI_X + 19;
+			y = POSI_Y - 6;
+			flags = V_SNAPTOLEFT|((splitnum == 2) ? V_SPLITSCREEN|V_SNAPTOBOTTOM : 0);	// flip P3 to the bottom.
+		}
+		else // else, that means we're P2 or P4.
+		{
+			x = POSI2_X - 75;
+			y = POSI2_Y - 6;
+			flags = V_SNAPTORIGHT|((splitnum == 3) ? V_SPLITSCREEN|V_SNAPTOBOTTOM : 0);	// flip P4 to the bottom
+		}
+	}
+
 	flags |= V_HUDTRANS;
 
 	skin_t *fakeskin;
@@ -10680,8 +11035,6 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 {
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
-		
-	tic_t worktime;
 
 	INT32 splitflags = 0;
 	if (!mode)
@@ -10709,63 +11062,51 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	
 	TX += 33;
 
-	worktime = drawtime/(60*TICRATE);
-
-	if (mode && !drawtime)
-		V_DrawKartString(TX, TY+3, splitflags, va("--'--\"--"));
-	else if (worktime < 100) // 99:99:99 only
+	if (drawtime == UINT32_MAX)
+		;
+	else if (mode && !drawtime)
 	{
-		if ((cv_timelimit.value && G_BattleGametype()) && (!players[consoleplayer].exiting && (leveltime > (timelimitintics + starttime + TICRATE/2)) && cv_overtime.value)) // i hate this so much
-		{
-			V_DrawKartString(TX, TY+3, splitflags, va("OVERTIME"));
-				return;
-		}
-		
-		// zero minute
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX, TY+3, splitflags, va("0"));
-			// minutes time       0 __ __
-			V_DrawKartString(TX+12, TY+3, splitflags, va("%d", worktime));
-		}
-		// minutes time       0 __ __
-		else
-			V_DrawKartString(TX, TY+3, splitflags, va("%d", worktime));
-
 		// apostrophe location     _'__ __
 		V_DrawKartString(TX+24, TY+3, splitflags, va("'"));
 
-		worktime = (drawtime/TICRATE % 60);
-
-		// zero second        _ 0_ __
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX+36, TY+3, splitflags, va("0"));
-		// seconds time       _ _0 __
-			V_DrawKartString(TX+48, TY+3, splitflags, va("%d", worktime));
-		}
-		// zero second        _ 00 __
-		else
-			V_DrawKartString(TX+36, TY+3, splitflags, va("%d", worktime));
-
 		// quotation mark location    _ __"__
 		V_DrawKartString(TX+60, TY+3, splitflags, va("\""));
-
-		worktime = G_TicsToCentiseconds(drawtime);
-
-		// zero tick          _ __ 0_
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX+72, TY+3, splitflags, va("0"));
-		// tics               _ __ _0
-			V_DrawKartString(TX+84, TY+3, splitflags, va("%d", worktime));
-		}
-		// zero tick          _ __ 00
-		else
-			V_DrawKartString(TX+72, TY+3, splitflags, va("%d", worktime));
 	}
-	else if ((drawtime/TICRATE) & 1)
-		V_DrawKartString(TX, TY+3, splitflags, va("99'59\"99"));
+	else
+	{
+		tic_t worktime = drawtime/(60*TICRATE);
+
+		if ((G_BattleGametype() && cv_timelimit.value) && (!players[consoleplayer].exiting && (leveltime > (timelimitintics + starttime + TICRATE/2)) && cv_overtime.value)) // i hate this so much
+		{
+			V_DrawKartString(TX, TY+3, splitflags, va("OVERTIME"));
+		}
+		else if (worktime < 100)
+		{
+			// minutes time      00 __ __
+			V_DrawKartString(TX,    TY+3, splitflags, va("%d", worktime/10));
+			V_DrawKartString(TX+12, TY+3, splitflags, va("%d", worktime%10));
+
+			// apostrophe location     _'__ __
+			V_DrawKartString(TX+24, TY+3, splitflags, va("'"));
+
+			worktime = (drawtime/TICRATE % 60);
+
+			// seconds time       _ 00 __
+			V_DrawKartString(TX+36, TY+3, splitflags, va("%d", worktime/10));
+			V_DrawKartString(TX+48, TY+3, splitflags, va("%d", worktime%10));
+
+			// quotation mark location    _ __"__
+			V_DrawKartString(TX+60, TY+3, splitflags, va("\""));
+
+			worktime = G_TicsToCentiseconds(drawtime);
+
+			// tics               _ __ 00
+			V_DrawKartString(TX+72, TY+3, splitflags, va("%d", worktime/10));
+			V_DrawKartString(TX+84, TY+3, splitflags, va("%d", worktime%10));
+		}
+		else if ((drawtime/TICRATE) & 1)
+			V_DrawKartString(TX, TY+3, splitflags, va("99'59\"99"));
+	}
 
 	if (emblemmap && (modeattacking || (mode == 1)) && !demo.playback) // emblem time!
 	{
@@ -11267,6 +11608,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 
 			if (tab[i].num == whiteplayer)
 				V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
+
 			if (G_BattleGametype() && players[tab[i].num].kartstuff[k_bumper] <= 0)
 				V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 			else
@@ -11373,7 +11715,7 @@ static void K_drawKartLaps(void)
 			else
 				V_DrawMappedPatch(fx, fy, V_HUDTRANS|splitflags, kp_lapstickerclr, colormap);
 		}
-		
+
 		if (stplyr->exiting)
 			V_DrawKartString(fx+33, fy+3, V_HUDTRANS|splitflags, "FIN");
 		else
@@ -11388,7 +11730,7 @@ static void K_drawKartSpeedometer(void)
 		return;
 
 	fixed_t convSpeed = 0;
-	
+
 	//KartZ speedo
 	fixed_t fuspeed = 0;
 	INT32 spdpatch = 0;
@@ -11526,6 +11868,14 @@ static void K_drawKartBumpersOrKarma(void)
 	fy = info.y;
 	fflags = info.flags;
 
+	if (cv_battlespeedo.value && !splitscreen)
+	{
+		if ((cv_newspeedometer.value == 2 && xtra_speedo) || (cv_newspeedometer.value == 3 && achi_speedo) || (cv_newspeedometer.value == 5 && xtra_speedo3))
+			fy += 5;
+		else
+			fy += 7;
+	}
+
 	if (splitscreen > 1)
 	{
 		if (stplyr->kartstuff[k_bumper] <= 0)
@@ -11662,11 +12012,11 @@ static boolean K_GetScreenCoords(vector2_t *vec, player_t *player, mobj_t *targe
 		offset = FixedMul(FINETANGENT(((aimingangle+ANGLE_90)>>ANGLETOFINESHIFT) & 4095), xres);
 		// this isn't fovtan... what am i even doing anymore
 		if (splitscreen == 1)
-			offset = 17*offset/10;
-		// OpenGL with software perspective is miscentered on non-16:10 resolutions
+			offset = 17*offset/120;
 #ifdef HWRENDER
-		if (rendermode == render_opengl)
-			offset = FixedMul(offset, FixedDiv(104857, FixedDiv(xres, yres)));
+		// OpenGL with software perspective is miscentered on non-16:10 resolutions
+		//if (rendermode == render_opengl)
+			//offset = FixedMul(offset, FixedDiv(104857, FixedDiv(xres, yres)));
 #endif
 		// thanks fickle
 		offset = FixedDiv(offset, fovratio);
@@ -11689,12 +12039,14 @@ static boolean K_GetScreenCoords(vector2_t *vec, player_t *player, mobj_t *targe
 	int splitindex = stplyrnum;
 
 	// adjust coords for splitscreen
-	if (splitscreen == 1){ // 2P
+	if (splitscreen == 1) // 2P
+	{
 		y = y>>1;
 		if (splitindex)
 			y = y + yres;
 	}
-	if (splitscreen >= 2) { // 3P or 4P
+	if (splitscreen >= 2) // 3P or 4P
+	{
 		x = x>>1;
 		y = y>>1;
 		if (splitindex & 1)
@@ -11978,8 +12330,19 @@ static void K_drawDriftGauge(void)
 		0, 31, 47, 63, 79, 95, 111, 119, 127, 143, 159, 175, 183, 191, 199, 207, 223, 247
 	};
 
-	if (!stplyr->mo || !stplyr->kartstuff[k_drift] || (!splitscreen && !camera->chase))
+	if (demo.playback && demo.freecam)
 		return;
+
+	if (!stplyr->mo || (!splitscreen && !camera->chase))
+		return;
+
+	if (forceshowhud)
+		goto skipcrap; // i will skip the drift early return and you cant stop me!
+
+	if (!stplyr->kartstuff[k_drift])
+		return;
+
+skipcrap:
 
 	if (!K_GetScreenCoords(&pos, stplyr, stplyr->mo, FixedMul(cv_driftgaugeofs.value, cv_driftgaugeofs.value > 0 ? stplyr->mo->scale : mapobjectscale), false))
 		return;
@@ -12033,9 +12396,7 @@ static void K_drawDriftGauge(void)
 				{
 					cmap = R_GetTranslationColormap(TC_RAINBOW, 1 + leveltime % (MAXSKINCOLORS-1),GTC_CACHE);
 					for	(i = 0; i < 4; i++)
-					{
-						V_DrawFill(barx, bary+dup*1+dup*i, BAR_WIDTH, dup, (driftrainbow[(leveltime % 18) + 1] + i*2) | V_NOSCALESTART|drifttrans);
-					}
+						V_DrawFill(barx, bary+dup*1+dup*i, BAR_WIDTH, dup, (driftrainbow[min((leveltime % 18) + 1, 18 - 1)] + i*2) | V_NOSCALESTART|drifttrans);
 				}
 				else // none/blue/red
 				{
@@ -12221,7 +12582,7 @@ static void K_drawKartPlayerCheck(void)
 	}
 }
 
-static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, patch_t *AutomapPic)
+static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags)
 {
 	// amnum xpos & ypos are the icon's speed around the HUD.
 	// The number being divided by is for how fast it moves.
@@ -12236,60 +12597,17 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 	fixed_t amnumxpos, amnumypos;
 	INT32 amxpos, amypos;
 
-	node_t *bsp = &nodes[numnodes-1];
-	fixed_t maxx, minx, maxy, miny;
-
-	fixed_t mapwidth, mapheight;
-	fixed_t xoffset, yoffset;
-	fixed_t xscale, yscale, zoom;
-
 	if (mo->skin)
-		skin = ((skin_t*)((mo->localskin) ? mo->localskin : mo->skin))-((skinlocal) ? localskins : skins);
+		skin = ((skin_t*)(mo->localskin ? mo->localskin : mo->skin))-(skinlocal ? localskins : skins);
 
-	maxx = maxy = INT32_MAX;
-	minx = miny = INT32_MIN;
-	minx = bsp->bbox[0][BOXLEFT];
-	maxx = bsp->bbox[0][BOXRIGHT];
-	miny = bsp->bbox[0][BOXBOTTOM];
-	maxy = bsp->bbox[0][BOXTOP];
-
-	if (bsp->bbox[1][BOXLEFT] < minx)
-		minx = bsp->bbox[1][BOXLEFT];
-	if (bsp->bbox[1][BOXRIGHT] > maxx)
-		maxx = bsp->bbox[1][BOXRIGHT];
-	if (bsp->bbox[1][BOXBOTTOM] < miny)
-		miny = bsp->bbox[1][BOXBOTTOM];
-	if (bsp->bbox[1][BOXTOP] > maxy)
-		maxy = bsp->bbox[1][BOXTOP];
-
-	// You might be wondering why these are being bitshift here
-	// it's because mapwidth and height would otherwise overflow for maps larger than half the size possible...
-	// map boundaries and sizes will ALWAYS be whole numbers thankfully
-	// later calculations take into consideration that these are actually not in terms of FRACUNIT though
-	minx >>= FRACBITS;
-	maxx >>= FRACBITS;
-	miny >>= FRACBITS;
-	maxy >>= FRACBITS;
-
-	mapwidth = maxx - minx;
-	mapheight = maxy - miny;
-
-	// These should always be small enough to be bitshift back right now
-	xoffset = (minx + mapwidth/2)<<FRACBITS;
-	yoffset = (miny + mapheight/2)<<FRACBITS;
-
-	xscale = FixedDiv(AutomapPic->width, mapwidth);
-	yscale = FixedDiv(AutomapPic->height, mapheight);
-	zoom = FixedMul(min(xscale, yscale), FRACUNIT-FRACUNIT/20);
-
-	amnumxpos = (FixedMul(lerp(mo->old_x, mo->x), zoom) - FixedMul(xoffset, zoom));
-	amnumypos = -(FixedMul(lerp(mo->old_y, mo->y), zoom) - FixedMul(yoffset, zoom));
+	amnumxpos = (FixedMul(lerp(mo->old_x, mo->x), minimapinfo.zoom) - minimapinfo.offs_x);
+	amnumypos = -(FixedMul(lerp(mo->old_y, mo->y), minimapinfo.zoom) - minimapinfo.offs_y);
 
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	amxpos = amnumxpos + ((x + AutomapPic->width/2 - (((skinlocal) ? localfacemmapprefix : facemmapprefix)[skin]->width/2))<<FRACBITS);
-	amypos = amnumypos + ((y + AutomapPic->height/2 - (((skinlocal) ? localfacemmapprefix : facemmapprefix)[skin]->height/2))<<FRACBITS);
+	amxpos = amnumxpos + ((x + (SHORT(minimapinfo.minimap_pic->width)-SHORT((skinlocal ? localfacemmapprefix : facemmapprefix)[skin]->width))/2)<<FRACBITS);
+	amypos = amnumypos + ((y + (SHORT(minimapinfo.minimap_pic->height)-SHORT((skinlocal ? localfacemmapprefix : facemmapprefix)[skin]->height))/2)<<FRACBITS);
 
 	if (!mo->color) // 'default' color
 		V_DrawSciencePatch(amxpos, amypos, flags, ( (skinlocal) ? localfacemmapprefix : facemmapprefix )[skin], FRACUNIT);
@@ -12327,8 +12645,6 @@ static void K_drawKartMinimapHead(mobj_t *mo, INT32 x, INT32 y, INT32 flags, pat
 
 static void K_drawKartMinimap(void)
 {
-	INT32 lumpnum;
-	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
 	INT32 minimaptrans, splitflags;
@@ -12343,21 +12659,21 @@ static void K_drawKartMinimap(void)
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(gamemap)));
-
-	if (lumpnum != -1)
-		AutomapPic = W_CachePatchName(va("%sR", G_BuildMapName(gamemap)), PU_HUDGFX);
-	else
+	if (minimapinfo.minimap_pic == NULL)
+	{
 		return; // no pic, just get outta here
+	}
 
 	drawinfo_t info;
 	K_getMinimapDrawinfo(&info);
-	x = info.x - (AutomapPic->width/2);
-	y = info.y - (AutomapPic->height/2);
+	x = info.x - (SHORT(minimapinfo.minimap_pic->width)/2);
+	y = info.y - (SHORT(minimapinfo.minimap_pic->height)/2);
 	splitflags = info.flags;
 
 
-	if (timeinmap > 105)
+	if (forceshowhud)
+		minimaptrans = cv_kartminimap.value;
+	else if (timeinmap > 105)
 	{
 		minimaptrans = cv_kartminimap.value;
 		if (timeinmap <= 113)
@@ -12372,9 +12688,9 @@ static void K_drawKartMinimap(void)
 	splitflags |= minimaptrans;
 
 	if (encoremode)
-		V_DrawScaledPatch(x+(AutomapPic->width), y, splitflags|V_FLIP, AutomapPic);
+		V_DrawScaledPatch(x+SHORT(minimapinfo.minimap_pic->width), y, splitflags|V_FLIP, minimapinfo.minimap_pic);
 	else
-		V_DrawScaledPatch(x, y, splitflags, AutomapPic);
+		V_DrawScaledPatch(x, y, splitflags, minimapinfo.minimap_pic);
 
 	if (!(splitscreen == 2))
 	{
@@ -12384,10 +12700,10 @@ static void K_drawKartMinimap(void)
 
 	// let offsets transfer to the heads, too!
 	if (encoremode)
-		x += SHORT(AutomapPic->leftoffset);
+		x += SHORT(minimapinfo.minimap_pic->leftoffset);
 	else
-		x -= SHORT(AutomapPic->leftoffset);
-	y -= SHORT(AutomapPic->topoffset);
+		x -= SHORT(minimapinfo.minimap_pic->leftoffset);
+	y -= SHORT(minimapinfo.minimap_pic->topoffset);
 
 	// initialize
 	for (i = 0; i < 4; i++)
@@ -12399,7 +12715,7 @@ static void K_drawKartMinimap(void)
 		demoghost *g = ghosts;
 		while (g)
 		{
-			K_drawKartMinimapHead(g->mo, x, y, splitflags, AutomapPic);
+			K_drawKartMinimapHead(g->mo, x, y, splitflags);
 			g = g->next;
 		}
 
@@ -12440,7 +12756,7 @@ static void K_drawKartMinimap(void)
 				continue;
 			}
 
-			K_drawKartMinimapHead(players[i].mo, x, y, splitflags, AutomapPic);
+			K_drawKartMinimapHead(players[i].mo, x, y, splitflags);
 		}
 	}
 
@@ -12452,7 +12768,7 @@ static void K_drawKartMinimap(void)
 	{
 		if (i == -1)
 			continue; // this doesn't interest us
-		K_drawKartMinimapHead(players[localplayers[i]].mo, x, y, splitflags, AutomapPic);
+		K_drawKartMinimapHead(players[localplayers[i]].mo, x, y, splitflags);
 	}
 }
 
@@ -13198,9 +13514,27 @@ void K_drawKartHUD(void)
 	// If not splitscreen, draw...
 	if (!splitscreen && !demo.title)
 	{
+		tic_t realtime = stplyr->realtime;
+
+		if (cv_showlaptimes.value
+			&& stplyr->kartstuff[k_lapanimation]
+			&& !stplyr->exiting
+			&& stplyr->laptime[LAP_LAST] != 0
+			&& stplyr->laptime[LAP_LAST] != UINT32_MAX)
+		{
+			if ((stplyr->kartstuff[k_lapanimation] / 5) & 1)
+			{
+				realtime = stplyr->laptime[LAP_LAST];
+			}
+			else
+			{
+				realtime = UINT32_MAX;
+			}
+		}
+
 		// Draw the timestamp
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, gamemap, 0);
+			K_drawKartTimestamp(realtime, TIME_X, TIME_Y, gamemap, 0);
 
 		if (!modeattacking)
 		{
@@ -13227,6 +13561,7 @@ void K_drawKartHUD(void)
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
 			INT32 x = (BASEVIDWIDTH - 32)*FRACUNIT, y = 128*FRACUNIT, offs;
+			INT32 logoflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM;
 
 			if (splitscreen == 3)
 			{
@@ -13245,8 +13580,8 @@ void K_drawKartHUD(void)
 				x += offs - frac;
 			}
 
-			V_DrawSciencePatch(x - (54*FRACUNIT), y, 0, W_CachePatchName("TTKBANNR", PU_CACHE), FRACUNIT/4);
-			V_DrawSciencePatch(x - (54*FRACUNIT), y + (25*FRACUNIT), 0, W_CachePatchName("TTKART", PU_CACHE), FRACUNIT/4);
+			V_DrawSciencePatch(x - (54*FRACUNIT), y, logoflags, W_CachePatchName("TTKBANNR", PU_CACHE), FRACUNIT/4);
+			V_DrawSciencePatch(x - (54*FRACUNIT), y + (25*FRACUNIT), logoflags, W_CachePatchName("TTKART", PU_CACHE), FRACUNIT/4);
 		}
 		else if (G_RaceGametype()) // Race-only elements
 		{
@@ -13341,6 +13676,9 @@ void K_drawKartHUD(void)
 
 	if (cv_kartdebugcheckpoint.value)
 		K_drawCheckpointDebugger();
+
+	if (cv_kartdebugdirector.value)
+		K_DrawDirectorDebugger();
 
 	if (cv_kartdebugnodes.value)
 	{

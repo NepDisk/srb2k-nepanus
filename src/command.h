@@ -141,6 +141,7 @@ typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NUL
 extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];
 extern CV_PossibleValue_t CV_Unsigned[];
+extern CV_PossibleValue_t CV_Signed[];
 extern CV_PossibleValue_t CV_Natural[];
 
 // SRB2kart

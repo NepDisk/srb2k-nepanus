@@ -17,20 +17,6 @@
 #include "doomdef.h"
 #include "info.h"
 
-typedef enum
-{
-	UNDO_NONE    = 0x00,
-	UNDO_NEWLINE = 0x01,
-	UNDO_SPACE   = 0x02,
-	UNDO_CUTLINE = 0x04,
-	UNDO_HEADER  = 0x07,
-	UNDO_ENDTEXT = 0x08,
-	UNDO_TODO = 0,
-	UNDO_DONE = 0,
-} undotype_f;
-
-#define DEH_WriteUndoline(a,b,c)
-
 void DEH_LoadDehackedLump(lumpnum_t lumpnum);
 void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump);
 

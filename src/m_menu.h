@@ -21,6 +21,8 @@
 #include "mserv.h"
 #include "r_things.h" // for SKINNAMESIZE
 
+extern boolean forceshowhud;
+
 //
 // MENUS
 //
@@ -58,6 +60,13 @@ void M_SortServerList(void);
 
 // Draws a box with a texture inside as background for messages
 void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines);
+
+// Same but with extra flags applied
+void M_DrawTextBoxFlags(INT32 x, INT32 y, INT32 width, INT32 boxlines, INT32 flags);
+
+// Draw text input
+typedef struct textinput_s textinput_t;
+void M_DrawTextInput(INT32 x, INT32 y, textinput_t *input, INT32 flags);
 
 // Used in d_netcmd to restart time attack
 void M_ModeAttackRetry(INT32 choice);
@@ -255,6 +264,7 @@ extern INT32 mapwads[NUMMAPS];
 
 extern description_t description[MAXSKINS];
 
+extern consvar_t cv_replaysearchrate;
 extern consvar_t cv_showfocuslost;
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern consvar_t cv_showallmaps;
@@ -286,8 +296,8 @@ void PDistort_menu_Onchange(void);
 // Bird menu updating
 void Bird_menu_Onchange(void);
 
-// Saturn menu updating
-void Saturn_menu_Onchange(void);
+// Saturn Hud menu updating
+void SaturnHud_menu_Onchange(void);
 
 void M_ReplayHut(INT32 choice);
 void M_SetPlaybackMenuPointer(void);
@@ -395,6 +405,17 @@ void M_SlotCvarIntoModMenu(consvar_t* cvar, const char* category, const char* na
 	0,\
 	NULL,\
 	{NULL}\
+}
+
+#define DoToolTips(menu, tooltip)\
+if (currentMenu == &menu)\
+{\
+	if (!(tooltip[itemOn] == NULL))\
+	{\
+		M_DrawSplitText(BASEVIDWIDTH / 2, BASEVIDHEIGHT-50, V_ALLOWLOWERCASE|V_SNAPTOBOTTOM, tooltip[itemOn], coolalphatimer);\
+		if (coolalphatimer > 0 && interpTimerHackAllow)\
+			coolalphatimer--;\
+	}\
 }
 
 #endif //__X_MENU__

@@ -64,9 +64,6 @@ static doomdata_t reboundstore[MAXREBOUND];
 static INT16 reboundsize[MAXREBOUND];
 static INT32 rebound_head, rebound_tail;
 
-/// \brief bandwith of netgame
-INT32 net_bandwidth;
-
 /// \brief max length per packet
 INT16 hardware_MAXPACKETLENGTH;
 
@@ -793,7 +790,7 @@ static void fprintfstringnewline(char *s, size_t len)
 }
 
 /// \warning Keep this up-to-date if you add/remove/rename packet types
-static const char *packettypename[NUMPACKETTYPE] =
+const char *packettypename[NUMPACKETTYPE] =
 {
 	"NOTHING",
 	"SERVERCFG",
@@ -838,11 +835,19 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"PING"
 };
 
+const char *Net_GetPacketName(UINT8 packettype)
+{
+	if (packettype >= NUMPACKETTYPE)
+		return "UNKNOWN";
+
+	return packettypename[packettype];
+}
+
 static void DebugPrintpacket(const char *header)
 {
 	fprintf(debugfile, "%-12s (node %d,ack %d,ackret %d,size %d) type(%d) : %s\n",
 		header, doomcom->remotenode, netbuffer->ack, netbuffer->ackreturn, doomcom->datalength,
-		netbuffer->packettype, packettypename[netbuffer->packettype]);
+		netbuffer->packettype, Net_GetPacketName(netbuffer->packettype));
 
 	switch (netbuffer->packettype)
 	{
@@ -1209,7 +1214,7 @@ boolean HGetPacket(void)
 		}
 		break;
 	}
-#endif // ndef NONET
+#endif // ifndef NONET
 
 	return true;
 }
@@ -1259,10 +1264,7 @@ void D_SetDoomcom(void)
 {
 	if (doomcom) return;
 	doomcom = Z_Calloc(sizeof (doomcom_t), PU_STATIC, NULL);
-	doomcom->id = DOOMCOM_ID;
 	doomcom->numslots = doomcom->numnodes = 1;
-	doomcom->gametype = 0;
-	doomcom->consoleplayer = 0;
 	doomcom->extratics = 0;
 }
 
@@ -1287,7 +1289,6 @@ boolean D_CheckNetGame(void)
 	I_NetMakeNodewPort = NULL;
 
 	hardware_MAXPACKETLENGTH = MAXPACKETLENGTH;
-	net_bandwidth = 30000;
 	// I_InitNetwork sets doomcom and netgame
 	// check and initialize the network driver
 	multiplayer = false;
@@ -1307,7 +1308,6 @@ boolean D_CheckNetGame(void)
 	server = true; // WTF? server always true???
 		// no! The deault mode is server. Client is set elsewhere
 		// when the client executes connect command.
-	doomcom->ticdup = 1;
 
 	if (M_CheckParm("-extratic"))
 	{
@@ -1316,21 +1316,6 @@ boolean D_CheckNetGame(void)
 		else
 			doomcom->extratics = 1;
 		CONS_Printf(M_GetText("Set extratics to %d\n"), doomcom->extratics);
-	}
-
-	if (M_CheckParm("-bandwidth"))
-	{
-		if (M_IsNextParm())
-		{
-			net_bandwidth = atoi(M_GetNextParm());
-			if (net_bandwidth < 1000)
-				net_bandwidth = 1000;
-			if (net_bandwidth > 100000)
-				hardware_MAXPACKETLENGTH = MAXPACKETLENGTH;
-			CONS_Printf(M_GetText("Network bandwidth set to %d\n"), net_bandwidth);
-		}
-		else
-			I_Error("usage: -bandwidth <byte_per_sec>");
 	}
 
 	software_MAXPACKETLENGTH = hardware_MAXPACKETLENGTH;
@@ -1352,8 +1337,6 @@ boolean D_CheckNetGame(void)
 	if (netgame)
 		multiplayer = true;
 
-	if (doomcom->id != DOOMCOM_ID)
-		I_Error("Doomcom buffer invalid!");
 	if (doomcom->numnodes > MAXNETNODES)
 		I_Error("Too many nodes (%d), max:%d", doomcom->numnodes, MAXNETNODES);
 
@@ -1366,7 +1349,7 @@ boolean D_CheckNetGame(void)
 	if (M_CheckParm("-debugfile"))
 	{
 		char filename[21];
-		INT32 k = doomcom->consoleplayer - 1;
+		INT32 k = consoleplayer - 1;
 		if (M_IsNextParm())
 			k = atoi(M_GetNextParm()) - 1;
 		while (!debugfile && k < MAXPLAYERS)
@@ -1454,13 +1437,13 @@ void Command_Ping_f(void)
 		}
 	}
 
-	     if (f_width < 10)  f_width = 1;
+	if 		(f_width < 10)  f_width = 1;
 	else if (f_width < 100) f_width = 2;
-	else                    f_width = 3;
+	else					f_width = 3;
 
-	     if (ms_width < 10)  ms_width = 1;
+	if 		(ms_width < 10)  ms_width = 1;
 	else if (ms_width < 100) ms_width = 2;
-	else                     ms_width = 3;
+	else					 ms_width = 3;
 
 	qsort(pingv, pingc, sizeof (struct pingcell), &pingcellcmp);
 

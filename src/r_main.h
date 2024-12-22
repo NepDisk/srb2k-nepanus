@@ -33,10 +33,14 @@ extern size_t validcount, linecount, loopcount, framecount;
 
 // The fraction of a tic being drawn (for interpolation between two tics)
 extern fixed_t rendertimefrac;
+// Same as rendertimefrac but not suspended when the game is paused
+extern fixed_t rendertimefrac_unpaused;
 // Evaluated delta tics for this frame (how many tics since the last frame)
 extern fixed_t renderdeltatics;
 // The current render is a new logical tic
 extern boolean renderisnewtic;
+
+extern mobj_t *viewmobj;
 
 //
 // Lighting LUT.
@@ -69,13 +73,21 @@ extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 
 // Utility functions.
 INT32 R_PointOnSide(fixed_t x, fixed_t y, const node_t *node);
-INT32 R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line);
+
+FUNCINLINE static ATTRINLINE PUREFUNC INT32 R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line)
+{
+    fixed_t lx = line->v1->x;
+    fixed_t ly = line->v1->y;
+    fixed_t ldx = line->v2->x - lx;
+    fixed_t ldy = line->v2->y - ly;
+
+	// heavily optimized version of R_PointOnSide, stolen from GZDoom.
+	return (INT64)(y - ly) * ldx + (INT64)(lx - x) * ldy > 0;
+}
+
 angle_t R_PointToAngle(fixed_t x, fixed_t y);
 angle_t R_PointToAngle64(INT64 x, INT64 y);
-angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1);
 angle_t R_PointToAngle2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
-fixed_t R_PointToDist(fixed_t x, fixed_t y);
-fixed_t R_PointToDist2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
 angle_t R_PlayerSliptideAngle(player_t *player);
 
 fixed_t R_ScaleFromGlobalAngle(angle_t visangle);
@@ -84,8 +96,33 @@ subsector_t *R_PointInSubsector(fixed_t x, fixed_t y);
 boolean R_IsPointInSector(sector_t *sector, fixed_t x, fixed_t y);
 subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y);
 
+#define R_PointToDist(x, y) R_PointToDist2(viewx, viewy, x, y)
+#define R_PointToDist2(px2, py2, px1, py1) FixedHypot((px1) - (px2), (py1) - (py2))
+
+
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph);
 void R_GetRenderBlockMapDimensions(fixed_t drawdist, INT32 *xl, INT32 *xh, INT32 *yl, INT32 *yh);
+
+
+typedef struct portal_pair
+{
+    INT32 line1;
+    INT32 line2;
+    UINT8 pass;
+    struct portal_pair *next;
+
+    fixed_t viewx;
+    fixed_t viewy;
+    fixed_t viewz;
+    angle_t viewangle;
+
+    INT32 start;
+    INT32 end;
+    INT16 *ceilingclip;
+    INT16 *floorclip;
+    fixed_t *frontscale;
+} portal_pair;
+
 
 // Performance stats
 extern precise_t ps_prevframetime;// time when previous frame was rendered
@@ -118,17 +155,19 @@ extern consvar_t cv_flipcam, cv_flipcam2, cv_flipcam3, cv_flipcam4;
 extern consvar_t cv_dropshadow, cv_shadow, cv_shadowoffs;
 extern consvar_t cv_ffloorclip, cv_spriteclip;
 extern consvar_t cv_translucency;
-extern consvar_t cv_drawdist, cv_drawdist_precip, cv_lessprecip;
+extern consvar_t cv_drawdist, cv_drawdist_precip, cv_lessprecip, cv_mobjscaleprecip;
 extern consvar_t cv_fov;
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup;
 extern consvar_t cv_grmaxinterpdist;
+extern consvar_t cv_ripplewater;
 
 // Called by startup code.
 void R_Init(void);
 
 void R_CheckViewMorph(void);
 void R_ApplyViewMorph(void);
+angle_t R_ViewRollAngle(const player_t *player);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;
@@ -148,4 +187,6 @@ void R_RegisterEngineStuff(void);
 
 // return multiplier for HUD uncap
 INT32 R_GetHudUncap(void);
+// same as above but keeps interpolation during pause
+INT32 R_GetMenuUncap(void);
 #endif

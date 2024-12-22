@@ -29,6 +29,7 @@
 #include "z_zone.h"
 #include "r_main.h" //Two extra includes.
 #include "r_sky.h"
+#include "st_stuff.h"
 #include "p_polyobj.h"
 #include "p_slopes.h"
 #include "hu_stuff.h"
@@ -97,6 +98,8 @@ typedef struct
 	UINT32 count;
 	thinker_t **thinkers;
 } thinkerlist_t;
+
+//static boolean fromlapexec = false;
 
 static void P_SearchForDisableLinedefs(void);
 static void P_SpawnScrollers(void);
@@ -622,48 +625,6 @@ void P_SetupLevelFlatAnims(void)
 // UTILITIES
 //
 
-#if 0
-/** Gets a side from a sector line.
-  *
-  * \param currentSector Sector the line is in.
-  * \param line          Index of the line within the sector.
-  * \param side          0 for front, 1 for back.
-  * \return Pointer to the side_t of the side you want.
-  * \sa getSector, twoSided, getNextSector
-  */
-static inline side_t *getSide(INT32 currentSector, INT32 line, INT32 side)
-{
-	return &sides[(sectors[currentSector].lines[line])->sidenum[side]];
-}
-
-/** Gets a sector from a sector line.
-  *
-  * \param currentSector Sector the line is in.
-  * \param line          Index of the line within the sector.
-  * \param side          0 for front, 1 for back.
-  * \return Pointer to the ::sector_t of the sector on that side.
-  * \sa getSide, twoSided, getNextSector
-  */
-static inline sector_t *getSector(INT32 currentSector, INT32 line, INT32 side)
-{
-	return sides[(sectors[currentSector].lines[line])->sidenum[side]].sector;
-}
-
-/** Determines whether a sector line is two-sided.
-  * Uses the Boom method, checking if the line's back side is set to -1, rather
-  * than looking for ::ML_TWOSIDED.
-  *
-  * \param sector The sector.
-  * \param line   Line index within the sector.
-  * \return 1 if the sector is two-sided, 0 otherwise.
-  * \sa getSide, getSector, getNextSector
-  */
-static inline boolean twoSided(INT32 sector, INT32 line)
-{
-	return (sectors[sector].lines[line])->sidenum[1] != 0xffff;
-}
-#endif
-
 /** Finds sector next to current.
   *
   * \param line Pointer to the line to cross.
@@ -822,77 +783,6 @@ fixed_t P_FindNextLowestFloor(sector_t *sec, fixed_t currentheight)
 	return currentheight;
 }
 
-#if 0
-/** Finds next lowest ceiling in adjacent sectors.
-  *
-  * \param sec           Sector to start in.
-  * \param currentheight Height to start at.
-  * \return Next lowest ceiling height in an adjacent sector, or currentheight
-  *         if there are none lower.
-  * \sa P_FindLowestCeilingSurrounding, P_FindNextHighestCeiling,
-  *     P_FindNextLowestFloor
-  * \author Lee Killough
-  */
-static fixed_t P_FindNextLowestCeiling(sector_t *sec, fixed_t currentheight)
-{
-	sector_t *other;
-	size_t i;
-	fixed_t height;
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		other = getNextSector(sec->lines[i],sec);
-		if (other &&	other->ceilingheight < currentheight)
-		{
-			height = other->ceilingheight;
-			while (++i < sec->linecount)
-			{
-				other = getNextSector(sec->lines[i],sec);
-				if (other &&	other->ceilingheight > height
-					&& other->ceilingheight < currentheight)
-					height = other->ceilingheight;
-			}
-			return height;
-		}
-	}
-	return currentheight;
-}
-
-/** Finds next highest ceiling in adjacent sectors.
-  *
-  * \param sec           Sector to start in.
-  * \param currentheight Height to start at.
-  * \return Next highest ceiling height in an adjacent sector, or currentheight
-  *         if there are none higher.
-  * \sa P_FindHighestCeilingSurrounding, P_FindNextLowestCeiling,
-  *     P_FindNextHighestFloor
-  * \author Lee Killough
-  */
-static fixed_t P_FindNextHighestCeiling(sector_t *sec, fixed_t currentheight)
-{
-	sector_t *other;
-	size_t i;
-	fixed_t height;
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		other = getNextSector(sec->lines[i], sec);
-		if (other && other->ceilingheight > currentheight)
-		{
-			height = other->ceilingheight;
-			while (++i < sec->linecount)
-			{
-				other = getNextSector(sec->lines[i],sec);
-				if (other && other->ceilingheight < height
-					&& other->ceilingheight > currentheight)
-					height = other->ceilingheight;
-			}
-			return height;
-		}
-	}
-	return currentheight;
-}
-#endif
 
 ////////////////////////////
 // End New Boom functions
@@ -962,133 +852,6 @@ fixed_t P_FindHighestCeilingSurrounding(sector_t *sec)
 	return height;
 }
 
-#if 0
-//SoM: 3/7/2000: UTILS.....
-//
-// P_FindShortestTextureAround()
-//
-// Passed a sector number, returns the shortest lower texture on a
-// linedef bounding the sector.
-//
-//
-static fixed_t P_FindShortestTextureAround(INT32 secnum)
-{
-	fixed_t minsize = 32000<<FRACBITS;
-	side_t *side;
-	size_t i;
-	sector_t *sec= &sectors[secnum];
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		if (twoSided(secnum, i))
-		{
-			side = getSide(secnum,i,0);
-			if (side->bottomtexture > 0)
-				if (textureheight[side->bottomtexture] < minsize)
-					minsize = textureheight[side->bottomtexture];
-			side = getSide(secnum,i,1);
-			if (side->bottomtexture > 0)
-				if (textureheight[side->bottomtexture] < minsize)
-					minsize = textureheight[side->bottomtexture];
-		}
-	}
-	return minsize;
-}
-
-//SoM: 3/7/2000: Stuff.... (can you tell I'm getting tired? It's 12 : 30!)
-//
-// P_FindShortestUpperAround()
-//
-// Passed a sector number, returns the shortest upper texture on a
-// linedef bounding the sector.
-//
-//
-static fixed_t P_FindShortestUpperAround(INT32 secnum)
-{
-	fixed_t minsize = 32000<<FRACBITS;
-	side_t *side;
-	size_t i;
-	sector_t *sec = &sectors[secnum];
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		if (twoSided(secnum, i))
-		{
-			side = getSide(secnum,i,0);
-			if (side->toptexture > 0)
-				if (textureheight[side->toptexture] < minsize)
-					minsize = textureheight[side->toptexture];
-			side = getSide(secnum,i,1);
-			if (side->toptexture > 0)
-				if (textureheight[side->toptexture] < minsize)
-					minsize = textureheight[side->toptexture];
-		}
-	}
-	return minsize;
-}
-
-//SoM: 3/7/2000
-//
-// P_FindModelFloorSector()
-//
-// Passed a floor height and a sector number, return a pointer to a
-// a sector with that floor height across the lowest numbered two sided
-// line surrounding the sector.
-//
-// Note: If no sector at that height bounds the sector passed, return NULL
-//
-//
-static sector_t *P_FindModelFloorSector(fixed_t floordestheight, INT32 secnum)
-{
-	size_t i;
-	sector_t *sec = &sectors[secnum];
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		if (twoSided(secnum, i))
-		{
-			if (getSide(secnum,i,0)->sector-sectors == secnum)
-				sec = getSector(secnum,i,1);
-			else
-				sec = getSector(secnum,i,0);
-
-			if (sec->floorheight == floordestheight)
-				return sec;
-		}
-	}
-	return NULL;
-}
-
-//
-// P_FindModelCeilingSector()
-//
-// Passed a ceiling height and a sector number, return a pointer to a
-// a sector with that ceiling height across the lowest numbered two sided
-// line surrounding the sector.
-//
-// Note: If no sector at that height bounds the sector passed, return NULL
-//
-static sector_t *P_FindModelCeilingSector(fixed_t ceildestheight, INT32 secnum)
-{
-	size_t i;
-	sector_t *sec = &sectors[secnum];
-
-	for (i = 0; i < sec->linecount; i++)
-	{
-		if (twoSided(secnum, i))
-		{
-			if (getSide(secnum, i, 0)->sector - sectors == secnum)
-				sec = getSector(secnum, i, 1);
-			else
-				sec = getSector(secnum, i, 0);
-
-			if (sec->ceilingheight == ceildestheight)
-				return sec;
-		}
-	}
-	return NULL;
-}
-#endif
 
 /** Searches the tag lists for the next sector tagged to a line.
   *
@@ -1176,37 +939,8 @@ static INT32 P_FindLineFromLineTag(const line_t *line, INT32 start)
 		return start;
 	}
 }
-#if 0
-/** Searches the tag lists for the next line with a given tag and special.
-  *
-  * \param tag     Tag number.
-  * \param start   -1 to start anew, or the result of a previous call to keep
-  *                searching.
-  * \return Number of next suitable line found.
-  * \sa P_FindLineFromLineTag
-  * \author Graue <graue@oceanbase.org>
-  */
-static INT32 P_FindLineFromTag(INT32 tag, INT32 start)
-{
-	if (tag == -1)
-	{
-		start++;
 
-		if (start >= numlines)
-			return -1;
 
-		return start;
-	}
-	else
-	{
-		start = start >= 0 ? lines[start].nexttag :
-			lines[(unsigned)tag % numlines].firsttag;
-		while (start >= 0 && lines[start].tag != tag)
-			start = lines[start].nexttag;
-		return start;
-	}
-}
-#endif
 //
 // P_FindSpecialLineFromTag
 //
@@ -1608,6 +1342,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	fixed_t dist = P_AproxDistance(triggerline->dx, triggerline->dy)>>FRACBITS;
 	size_t i, linecnt, sectori;
 	INT16 specialtype = triggerline->special;
+	//fromlapexec = false;
 
 	/////////////////////////////////////////////////
 	// Distance-checking/sector trigger conditions //
@@ -1707,17 +1442,11 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 
 			if (actor && actor->player && triggerline->flags & ML_EFFECT4)
 			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = actor->player->mare;
-				else*/
-					lap = actor->player->laps;
+				lap = actor->player->laps;
 			}
 			else
 			{
-				/*if (maptol & TOL_NIGHTS)
-					lap = P_FindLowestMare();
-				else*/
-					lap = P_FindLowestLap();
+				lap = P_FindLowestLap();
 			}
 
 			if (triggerline->flags & ML_NOCLIMB) // Need higher than or equal to
@@ -1735,6 +1464,8 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 				if (lap != (sides[triggerline->sidenum[0]].textureoffset >> FRACBITS))
 					return false;
 			}
+
+			//fromlapexec = true;
 		}
 		// If we were not triggered by a sector type especially for the purpose,
 		// a Linedef Executor linedef trigger is not handling sector triggers properly, return.
@@ -1754,12 +1485,6 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 
 	switch (specialtype)
 	{
-		/*case 305: // continuous
-		case 306: // each time
-		case 307: // once
-			if (!(actor && actor->player && actor->player->charability == dist/10))
-				return false;
-			break;*/
 		case 309: // continuous
 		case 310: // each time
 			// Only red team members can activate this.
@@ -1930,9 +1655,8 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 	// "Trigger on X calls" linedefs reset if noclimb is set
 	if ((specialtype == 321 || specialtype == 322) && triggerline->flags & ML_NOCLIMB)
 		triggerline->callcount = sides[triggerline->sidenum[0]].textureoffset>>FRACBITS;
-	else
 	// These special types work only once
-	if (specialtype == 302  // Once
+	else if (specialtype == 302  // Once
 	 || specialtype == 304  // Ring count - Once
 	 || specialtype == 307  // Character ability - Once
 	 || specialtype == 308  // Race only - Once
@@ -2054,16 +1778,18 @@ void P_SwitchWeather(INT32 weathernum)
 	if (purge)
 	{
 		thinker_t *think;
+		thinker_t *next;
 		precipmobj_t *precipmobj;
 
-		for (think = thinkercap.next; think != &thinkercap; think = think->next)
+		for (think = thinkercap.next; think != &thinkercap; think = next)
 		{
+			next = think->next;
+
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
 
 			precipmobj = (precipmobj_t *)think;
-
-			P_RemovePrecipMobj(precipmobj);
+			P_FreePrecipMobj(precipmobj);
 		}
 	}
 	else if (swap && !((swap == PRECIP_BLANK && curWeather == PRECIP_STORM_NORAIN) || (swap == PRECIP_STORM_NORAIN && curWeather == PRECIP_BLANK))) // Rather than respawn all that crap, reuse it!
@@ -2076,27 +1802,29 @@ void P_SwitchWeather(INT32 weathernum)
 		{
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
+
 			precipmobj = (precipmobj_t *)think;
 
 			if (swap == PRECIP_RAIN) // Snow To Rain
 			{
+				precipmobj->type = MT_RAIN; // proper set the type
+				precipmobj->info = &mobjinfo[MT_RAIN];
 				precipmobj->flags = mobjinfo[MT_RAIN].flags;
 				st = &states[mobjinfo[MT_RAIN].spawnstate];
 				precipmobj->state = st;
 				precipmobj->tics = st->tics;
 				precipmobj->sprite = st->sprite;
 				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_RAIN].speed;
+				precipmobj->momz = cv_mobjscaleprecip.value ? FixedMul(mobjinfo[MT_RAIN].speed, mapobjectscale) : mobjinfo[MT_RAIN].speed;
 
-				precipmobj->precipflags &= ~PCF_INVISIBLE;
-
-				precipmobj->precipflags |= PCF_RAIN;
-				//think->function.acp1 = (actionf_p1)P_RainThinker;
+				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_SPLASH); // P_PrecipThinker will add this again if it needs to
 			}
 			else if (swap == PRECIP_SNOW) // Rain To Snow
 			{
 				INT32 z;
 
+				precipmobj->type = MT_SNOWFLAKE; // proper set the type
+				precipmobj->info = &mobjinfo[MT_SNOWFLAKE];
 				precipmobj->flags = mobjinfo[MT_SNOWFLAKE].flags;
 				z = M_RandomByte();
 
@@ -2112,16 +1840,12 @@ void P_SwitchWeather(INT32 weathernum)
 				precipmobj->tics = st->tics;
 				precipmobj->sprite = st->sprite;
 				precipmobj->frame = st->frame;
-				precipmobj->momz = mobjinfo[MT_SNOWFLAKE].speed;
+				precipmobj->momz = cv_mobjscaleprecip.value ? FixedMul(mobjinfo[MT_SNOWFLAKE].speed, mapobjectscale) : mobjinfo[MT_SNOWFLAKE].speed;
 
-				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_RAIN);
-
-				//think->function.acp1 = (actionf_p1)P_SnowThinker;
+				precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_SPLASH); // P_PrecipThinker will add this again if it needs to
 			}
 			else if (swap == PRECIP_BLANK || swap == PRECIP_STORM_NORAIN) // Remove precip, but keep it around for reuse.
 			{
-				//think->function.acp1 = (actionf_p1)P_NullPrecipThinker;
-
 				precipmobj->precipflags |= PCF_INVISIBLE;
 			}
 		}
@@ -2300,22 +2024,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			EV_DoCeiling(line, moveCeilingByFrontTexture);
 			break;
 
-/*		case 405: // Lower floor by line, dx = speed, dy = amount to lower
-			EV_DoFloor(line, lowerFloorByLine);
-			break;
-
-		case 406: // Raise floor by line, dx = speed, dy = amount to raise
-			EV_DoFloor(line, raiseFloorByLine);
-			break;
-
-		case 407: // Lower ceiling by line, dx = speed, dy = amount to lower
-			EV_DoCeiling(line, lowerCeilingByLine);
-			break;
-
-		case 408: // Raise ceiling by line, dx = speed, dy = amount to raise
-			EV_DoCeiling(line, raiseCeilingByLine);
-			break;*/
-
 		case 409: // Change tagged sectors' tag
 		// (formerly "Change calling sectors' tag", but behavior was changed)
 		{
@@ -2406,12 +2114,12 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (bot)
-						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, (line->flags & ML_BLOCKMONSTERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
+						P_Teleport(bot, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ? mo->angle : dest->angle, (line->flags & ML_BLOCKMONSTERS) == 0, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					if (line->flags & ML_BLOCKMONSTERS)
-						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, false, (line->flags & ML_EFFECT4) == ML_EFFECT4);
+						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ? mo->angle : dest->angle, false, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 					else
 					{
-						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ?  mo->angle : dest->angle, true, (line->flags & ML_EFFECT4) == ML_EFFECT4);
+						P_Teleport(mo, dest->x, dest->y, dest->z, (line->flags & ML_NOCLIMB) ? mo->angle : dest->angle, true, (line->flags & ML_EFFECT4) == ML_EFFECT4);
 						// Play the 'bowrwoosh!' sound
 						S_StartSound(dest, sfx_mixup);
 					}
@@ -2420,6 +2128,12 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 413: // Change music
+			if (keepmusic && (leveltime <= MUSICSTARTTIME)) //why check for starttime? cause encore music Zzz...
+				return;
+
+			//if (cv_ignoremusicchanges.value && (leveltime >= MUSICSTARTTIME) && !fromlapexec) // keep lap music intanct tho
+				//return;
+
 			// console player only unless NOCLIMB is set
 			if ((line->flags & ML_NOCLIMB) || (mo && mo->player && P_IsLocalPlayer(mo->player)))
 			{
@@ -2499,6 +2213,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 414: // Play SFX
 			{
 				INT32 sfxnum;
+
+				//dont play any funky sound intros that may interfere with the music
+				if (skipintromus && (leveltime < MUSICSTARTTIME))
+					return;
 
 				sfxnum = sides[line->sidenum[0]].toptexture; //P_AproxDistance(line->dx, line->dy)>>FRACBITS;
 
@@ -2610,7 +2328,17 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					CONS_Debug(DBG_SETUP, "SOC Error: script lump %s not found/not valid.\n", newname);
 				}
 				else
-					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
+				{
+					// W_CacheLumpNum may not have null terminator, so we need to do this :blobcatgooglyholditsheadinitshands:
+					size_t len = W_LumpLength(lumpnum);
+					char *script = Z_Malloc(len+1, PU_STATIC, NULL);
+					memcpy(script, W_CacheLumpNum(lumpnum, PU_CACHE), len);
+					script[len] = 0;
+
+					COM_BufInsertText(script);
+
+					Z_Free(script);
+				}
 			}
 			break;
 
@@ -2766,6 +2494,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 422: // Cut away to another view
 			{
 				mobj_t *altview;
+				INT32 i;
 
 				if (!mo || !mo->player) // only players have views
 					return;
@@ -2779,6 +2508,18 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 				P_SetTarget(&mo->player->awayviewmobj, altview);
 				mo->player->awayviewtics = P_AproxDistance(line->dx, line->dy)>>FRACBITS;
+
+				if (gamestate == GS_LEVEL)
+				{
+					for (i = 0; i <= splitscreen; i++)
+					{
+						if (displayplayers[i] == (mo->player - players))
+						{
+							R_ResetViewInterpolation(i + 1);
+							R_ResetViewInterpolation(i + 1);
+						}
+					}
+				}
 
 				if (line->flags & ML_NOCLIMB) // lets you specify a vertical angle
 				{
@@ -2887,7 +2628,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 				// Copy effect to bot if necessary
 				// (Teleport them to you so they don't break it.)
-				if (bot && (bot->flags2 & MF2_TWOD) != (mo->flags2 & MF2_TWOD)) {
+				if (bot && (bot->flags2 & MF2_TWOD) != (mo->flags2 & MF2_TWOD))
+				{
 					bot->flags2 = (bot->flags2 & ~MF2_TWOD) | (mo->flags2 & MF2_TWOD);
 					P_SetOrigin(bot, mo->x, mo->y, mo->z);
 				}
@@ -2920,7 +2662,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				P_SetTarget(&dummy->target, mo);
 				A_CustomPower(dummy);
 
-				if (bot) {
+				if (bot)
+				{
 					P_SetTarget(&dummy->target, bot);
 					A_CustomPower(dummy);
 				}
@@ -3115,17 +2858,19 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 444: // Earthquake camera
 		{
-			quake.intensity = sides[line->sidenum[0]].textureoffset;
-			quake.radius = sides[line->sidenum[0]].rowoffset;
-			quake.time = P_AproxDistance(line->dx, line->dy)>>FRACBITS;
+			fixed_t intensity = sides[line->sidenum[0]].textureoffset;
+			fixed_t radius = sides[line->sidenum[0]].rowoffset;
+			tic_t time = P_AproxDistance(line->dx, line->dy)>>FRACBITS;
 
 			quake.epicenter = NULL; /// \todo
 
 			// reasonable defaults.
-			if (!quake.intensity)
-				quake.intensity = 8<<FRACBITS;
-			if (!quake.radius)
-				quake.radius = 512<<FRACBITS;
+			if (intensity <= 0)
+				intensity = 8<<FRACBITS;
+			if (radius <= 0)
+				radius = 512<<FRACBITS;
+
+			P_StartQuake(time, intensity, radius);
 			break;
 		}
 
@@ -3313,7 +3058,7 @@ boolean P_IsFlagAtBase(mobjtype_t flag)
 {
 	thinker_t *think;
 	mobj_t *mo;
-	INT32 specialnum = 0;
+	INT32 specialnum = (flag == MT_REDFLAG) ? 3 : 4;
 
 	for (think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
@@ -3324,11 +3069,6 @@ boolean P_IsFlagAtBase(mobjtype_t flag)
 
 		if (mo->type != flag)
 			continue;
-
-		if (mo->type == MT_REDFLAG)
-			specialnum = 3;
-		else if (mo->type == MT_BLUEFLAG)
-			specialnum = 4;
 
 		if (GETSECSPECIAL(mo->subsector->sector->special, 4) == specialnum)
 			return true;
@@ -3513,10 +3253,6 @@ static boolean P_ThingIsOnThe3DFloor(mobj_t *mo, sector_t *sector, sector_t *tar
 		if (rover->master->frontsector != sector)
 			continue;
 
-		// we're assuming the FOF existed when the first player touched it
-		//if (!(rover->flags & FF_EXISTS))
-		//	return false;
-
 		top = P_GetSpecialTopZ(mo, sector, targetsec);
 		bottom = P_GetSpecialBottomZ(mo, sector, targetsec);
 
@@ -3651,7 +3387,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 			}
 			else if (player->mo->health > 1)
 			{
-				P_PlayRinglossSound(player->mo);
+				P_PlayRinglossSound(player->mo, NULL);
 				if (player->mo->health > 10)
 					player->mo->health -= 10;
 				else
@@ -3762,8 +3498,11 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 					continue;
 
 				mo2 = (mobj_t *)th;
-				if (mo2->type == MT_EGGTRAP)
-					P_KillMobj(mo2, NULL, player->mo);
+
+				if (mo2->type != MT_EGGTRAP)
+					continue;
+
+				P_KillMobj(mo2, NULL, player->mo);
 			}
 
 			// clear the special so you can't push the button twice.
@@ -4046,8 +3785,6 @@ DoneSection2:
 				player->mo->momz = mobjinfo[MT_FAN].mass;
 
 			P_ResetPlayer(player);
-			//if (player->panim != PA_FALL) 					// SRB2kart
-			//	P_SetPlayerMobjState(player->mo, S_PLAY_FALL1);
 			break;
 
 		case 6: // SRB2kart 190117 - Sneaker Panel
@@ -4096,7 +3833,6 @@ DoneSection2:
 				// Grab speed and sequence values
 				speed = abs(lines[lineindex].dx)/8;
 				sequence = abs(lines[lineindex].dy)>>FRACBITS;
-
 				waypoint = P_GetFirstWaypoint(sequence);
 
 				if (!waypoint)
@@ -4155,7 +3891,6 @@ DoneSection2:
 				// Grab speed and sequence values
 				speed = -(abs(lines[lineindex].dx)/8); // Negative means reverse
 				sequence = abs(lines[lineindex].dy)>>FRACBITS;
-
 				waypoint = P_GetLastWaypoint(sequence);
 
 				if (!waypoint)
@@ -4180,12 +3915,6 @@ DoneSection2:
 
 				if (!(player->mo->state >= &states[S_KART_RUN1] && player->mo->state <= &states[S_KART_RUN2]))
 					P_SetPlayerMobjState(player->mo, S_KART_RUN1);
-
-				//if (!(player->mo->state >= &states[S_PLAY_ATK1] && player->mo->state <= &states[S_PLAY_ATK4])) // SRB2kart
-				//{
-				//	P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
-				//	S_StartSound(player->mo, sfx_spin);
-				//}
 			}
 			break;
 
@@ -4234,12 +3963,13 @@ DoneSection2:
 						CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 					// SRB2Kart: save best lap for record attack
-					if (player == &players[consoleplayer])
+					if (player->laptime[LAP_CUR] < player->laptime[LAP_BEST] || player->laptime[LAP_BEST] == 0)
 					{
-						if (curlap < bestlap || bestlap == 0)
-							bestlap = curlap;
-						curlap = 0;
+						player->laptime[LAP_BEST] = player->laptime[LAP_CUR];
 					}
+
+					player->laptime[LAP_LAST] = player->laptime[LAP_CUR];
+					player->laptime[LAP_CUR] = 0;
 
 					player->starposttime = player->realtime;
 					player->starpostnum = 0;
@@ -4356,7 +4086,6 @@ DoneSection2:
 				// Find the proceeding waypoint
 				// Determine the closest spot on the line between the three waypoints
 				// Put player at that location.
-
 				waypointmid = P_GetClosestWaypoint(sequence, player->mo);
 
 				if (!waypointmid)
@@ -4364,7 +4093,6 @@ DoneSection2:
 					CONS_Debug(DBG_GAMELOGIC, "ERROR: WAYPOINT(S) IN SEQUENCE %d NOT FOUND.\n", sequence);
 					break;
 				}
-
 				waypointlow = P_GetPreviousWaypoint(waypointmid, true);
 				waypointhigh = P_GetNextWaypoint(waypointmid, true);
 
@@ -4749,12 +4477,6 @@ static void P_RunSpecialSectorCheck(player_t *player, sector_t *sector)
 			nofloorneeded = true;
 			break;
 	}
-
-	// Check Section 3
-/*	switch(GETSECSPECIAL(sector->special, 3))
-	{
-
-	}*/
 
 	// Check Section 4
 	switch(GETSECSPECIAL(sector->special, 4))
@@ -5165,42 +4887,6 @@ static void P_AddFloatThinker(sector_t *sec, INT32 tag, line_t *sourceline)
 	R_CreateInterpolator_SectorPlane(&floater->thinker, sec, true);
 }
 
-/** Adds a bridge thinker.
-  * Bridge thinkers cause a group of FOFs to behave like
-  * a bridge made up of pieces, that bows under weight.
-  *
-  * \param sec          Control sector.
-  * \sa P_SpawnSpecials, T_BridgeThinker
-  * \author SSNTails <http://www.ssntails.org>
-  */
-/*
-static inline void P_AddBridgeThinker(line_t *sourceline, sector_t *sec)
-{
-	levelspecthink_t *bridge;
-
-	// create an initialize new thinker
-	bridge = Z_Calloc(sizeof (*bridge), PU_LEVSPEC, NULL);
-	P_AddThinker(&bridge->thinker);
-
-	bridge->thinker.function.acp1 = (actionf_p1)T_BridgeThinker;
-
-	bridge->sector = sec;
-	bridge->vars[0] = sourceline->frontsector->floorheight;
-	bridge->vars[1] = sourceline->frontsector->ceilingheight;
-	bridge->vars[2] = P_AproxDistance(sourceline->dx, sourceline->dy); // Speed
-	bridge->vars[2] = FixedDiv(bridge->vars[2], 16*FRACUNIT);
-	bridge->vars[3] = bridge->vars[2];
-
-	// Start tag and end tag are TARGET SECTORS, not CONTROL SECTORS
-	// Control sector tags should be End_Tag + (End_Tag - Start_Tag)
-	bridge->vars[4] = sourceline->tag; // Start tag
-	bridge->vars[5] = (sides[sourceline->sidenum[0]].textureoffset>>FRACBITS); // End tag
-
-	// interpolation
-	R_CreateInterpolator_SectorPlane(&bridge->thinker, &sectors[affectee], false);
-}
-*/
-
 /** Adds a Mario block thinker, which changes the block's texture between blank
   * and ? depending on whether it has contents.
   * Needed in case objects respawn inside.
@@ -5564,7 +5250,7 @@ static void P_RunLevelLoadExecutors(void)
   *       as they'll just be erased by UnArchiveThinkers.
   * \sa P_SpawnPrecipitation, P_SpawnFriction, P_SpawnPushers, P_SpawnScrollers
   */
-void P_SpawnSpecials(INT32 fromnetsave)
+void P_SpawnSpecials(INT32 fromnetsave, boolean reloadinggamestate)
 {
 	sector_t *sector;
 	size_t i;
@@ -5618,12 +5304,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 		}
 
-		// Process Section 3
-/*		switch(GETSECSPECIAL(player->specialsector, 3))
-		{
-
-		}*/
-
 		// Process Section 4
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
@@ -5644,6 +5324,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		curWeather = PRECIP_STORM_NORAIN;
 	else if (mapheaderinfo[gamemap-1]->weather == 6) // storm w/o lightning
 		curWeather = PRECIP_STORM_NOSTRIKES;
+	else if (mapheaderinfo[gamemap-1]->weather == 4) // blank
+		curWeather = PRECIP_BLANK;
 	else
 		curWeather = PRECIP_NONE;
 
@@ -5709,16 +5391,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				lines[i].special = 0;
 				continue;
 			}
-			/*else -- commented out because irrelevant to kart. keeping here because we can use these flags for something else now
-			{
-				if ((players[consoleplayer].charability == CA_THOK && (lines[i].flags & ML_NOSONIC))
-				|| (players[consoleplayer].charability == CA_FLY && (lines[i].flags & ML_NOTAILS))
-				|| (players[consoleplayer].charability == CA_GLIDEANDCLIMB && (lines[i].flags & ML_NOKNUX)))
-				{
-					lines[i].special = 0;
-					continue;
-				}
-			}*/
 		}
 
 		switch (lines[i].special)
@@ -5899,12 +5571,14 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 
 			case 64: // Appearing/Disappearing FOF option
-				if (lines[i].flags & ML_BLOCKMONSTERS) { // Find FOFs by control sector tag
+				if (lines[i].flags & ML_BLOCKMONSTERS) // Find FOFs by control sector tag
+				{
 					for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
 						for (j = 0; (unsigned)j < sectors[s].linecount; j++)
 							if (sectors[s].lines[j]->special >= 100 && sectors[s].lines[j]->special < 300)
 								Add_MasterDisappearer(abs(lines[i].dx>>FRACBITS), abs(lines[i].dy>>FRACBITS), abs(sides[lines[i].sidenum[0]].sector->floorheight>>FRACBITS), (INT32)(sectors[s].lines[j]-lines), (INT32)i);
-				} else // Find FOFs by effect sector tag
+				}
+				else // Find FOFs by effect sector tag
 					for (s = -1; (s = P_FindLineFromLineTag(lines + i, s)) >= 0 ;)
 					{
 						if ((size_t)s == i)
@@ -5915,10 +5589,6 @@ void P_SpawnSpecials(INT32 fromnetsave)
 				break;
 
 			case 65: // Bridge Thinker
-				/*
-				// Disable this until it's working right!
-				for (s = -1; (s = P_FindSectorFromLineTag(lines + i, s)) >= 0 ;)
-					P_AddBridgeThinker(&lines[i], &sectors[s]);*/
 				break;
 
 			case 100: // FOF (solid, opaque, shadows)
@@ -6609,7 +6279,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		}
 	}
 
-	P_RunLevelLoadExecutors();
+	if (!reloadinggamestate)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.
@@ -7147,7 +6818,7 @@ void T_Disappear(disappear_t *d)
 						if (*rover->t_slope)
 							sectors[s].soundorg.z = P_GetZAt(*rover->t_slope, sectors[s].soundorg.x, sectors[s].soundorg.y);
 						else
-						sectors[s].soundorg.z = *rover->topheight;
+							sectors[s].soundorg.z = *rover->topheight;
 						S_StartSound(&sectors[s].soundorg, sfx_appear);
 					}
 				}
@@ -7220,17 +6891,6 @@ void T_Friction(friction_t *f)
 	if (f->roverfriction)
 	//{
 		referrer = sectors + f->referrer;
-
-	/*	if (!(GETSECSPECIAL(referrer->special, 3) == 1
-			|| GETSECSPECIAL(referrer->special, 3) == 3))
-			return;
-	}
-	else
-	{
-		if (!(GETSECSPECIAL(sec->special, 3) == 1
-			|| GETSECSPECIAL(sec->special, 3) == 3))
-			return;
-	}*/
 
 	// Assign the friction value to players on the floor, non-floating,
 	// and clipped. Normally the object's friction value is kept at
@@ -7571,14 +7231,11 @@ void T_Pusher(pusher_t *p)
 	{
 		referrer = &sectors[p->referrer];
 
-		//if (!(GETSECSPECIAL(referrer->special, 3) == 2
-		//	|| GETSECSPECIAL(referrer->special, 3) == 3))
 		if (GETSECSPECIAL(referrer->special, 3) != 2)
 			return;
 	}
-	//else if (!(GETSECSPECIAL(sec->special, 3) == 2
-	//		|| GETSECSPECIAL(sec->special, 3) == 3))
 	else if (GETSECSPECIAL(sec->special, 3) != 2)
+
 	// For constant pushers (wind/current) there are 3 situations:
 	//
 	// 1) Affected Thing is above the floor.
@@ -7816,14 +7473,6 @@ void T_Pusher(pusher_t *p)
 						else
 							localangle[3] += (thing->angle - localangle[3]) / 8;
 					}
-					/*if (thing->player == &players[consoleplayer])
-						localangle[0] = thing->angle;
-					else if (thing->player == &players[displayplayers[1]])
-						localangle[1] = thing->angle;
-					else if (thing->player == &players[displayplayers[2]])
-						localangle[2] = thing->angle;
-					else if (thing->player == &players[displayplayers[3]])
-						localangle[3] = thing->angle;*/
 				}
 			}
 
@@ -7913,6 +7562,23 @@ static void P_SpawnPushers(void)
 		}
 }
 
+void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius)
+{
+	if (time <= 0 || intensity <= 0)
+	{
+		// Invalid parameters
+		return;
+	}
+
+	quake.time = time;
+	quake.intensity = FixedMul(intensity, mapobjectscale);
+
+	if (radius > 0)
+	{
+		quake.radius = FixedMul(radius, mapobjectscale);
+	}
+}
+
 static void P_SearchForDisableLinedefs(void)
 {
 	size_t i;
@@ -7935,13 +7601,6 @@ static void P_SearchForDisableLinedefs(void)
 			}
 			else if ((lines[i].flags & ML_NETONLY) == ML_NETONLY)
 				continue; // Net-only never triggers in single player
-			// commented out because irrelevant to kart. keeping here because we can use these flags for something else now
-			/*else if (players[consoleplayer].charability == CA_THOK && (lines[i].flags & ML_NOSONIC))
-				continue;
-			else if (players[consoleplayer].charability == CA_FLY && (lines[i].flags & ML_NOTAILS))
-				continue;
-			else if (players[consoleplayer].charability == CA_GLIDEANDCLIMB && (lines[i].flags & ML_NOKNUX))
-				continue;*/
 
 			// Disable any linedef specials with our tag.
 			for (j = -1; (j = P_FindLineFromLineTag(&lines[i], j)) >= 0;)

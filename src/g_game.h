@@ -18,6 +18,7 @@
 #include "doomstat.h"
 #include "d_event.h"
 #include "p_saveg.h"
+#include "m_textinput.h"
 
 extern char gamedatafilename[64];
 extern char timeattackfolder[64];
@@ -40,11 +41,12 @@ extern savebuffer_t demobuf;
 // ======================================
 
 // demoplaying back and demo recording
-extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality, cv_maxdemosize;
+extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality, cv_maxdemosize, cv_demochangemap;
 
 // Publicly-accessible demo vars
 struct demovars_s {
 	char titlename[65];
+	textinput_t titlenameinput;
 	boolean recording, playback, timing;
 	UINT16 version; // Current file format of the demo being played
 	boolean title; // Title Screen demo can be cancelled by any key
@@ -220,6 +222,8 @@ extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
 extern boolean camspin[MAXSPLITSCREENPLAYERS]; // SRB2Kart
 
+extern tic_t directortoggletimer;
+
 //
 // GAME
 //
@@ -267,6 +271,7 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 void G_DoLoadLevel(boolean resetplayer);
 
 void G_LoadDemoInfo(menudemo_t *pdemo);
+void G_LoadDemoTitle(menudemo_t *pdemo); // For use in replay search feature
 void G_DeferedPlayDemo(const char *demo);
 
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
@@ -417,25 +422,17 @@ void G_SetGamestate(gamestate_t newstate);
 
 // Gamedata record shit
 void G_AllocMainRecordData(INT16 i);
-//void G_AllocNightsRecordData(INT16 i);
 void G_ClearRecords(void);
 
-//UINT32 G_GetBestScore(INT16 map);
 tic_t G_GetBestTime(INT16 map);
-//tic_t G_GetBestLap(INT16 map);
-//UINT16 G_GetBestRings(INT16 map);
-//UINT32 G_GetBestNightsScore(INT16 map, UINT8 mare);
-//tic_t G_GetBestNightsTime(INT16 map, UINT8 mare);
-//UINT8 G_GetBestNightsGrade(INT16 map, UINT8 mare);
-
-//void G_AddTempNightsRecords(UINT32 pscore, tic_t ptime, UINT8 mare);
-//void G_SetNightsRecords(void);
 
 FUNCMATH INT32 G_TicsToHours(tic_t tics);
 FUNCMATH INT32 G_TicsToMinutes(tic_t tics, boolean full);
 FUNCMATH INT32 G_TicsToSeconds(tic_t tics);
 FUNCMATH INT32 G_TicsToCentiseconds(tic_t tics);
 FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
+
+boolean K_DirectorIsPlayerAlone(void); // idk where else to put this lol
 
 // Don't split up TOL handling
 INT16 G_TOLFlag(INT32 pgametype);
